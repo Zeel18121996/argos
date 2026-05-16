@@ -23,7 +23,11 @@ export const envValidationSchema = Joi.object({
   // SMTP (MailHog locally). Optional — defaults work for the docker-compose setup.
   SMTP_HOST: Joi.string().default('mailhog'),
   SMTP_PORT: Joi.number().integer().min(1).max(65535).default(1025),
-  SMTP_FROM: Joi.string().default('Argos Clone <no-reply@argos.local>'),
+  SMTP_SECURE: Joi.string().valid('true', 'false').default('false'),
+  SMTP_USER: Joi.string().optional(),
+  SMTP_PASS: Joi.string().optional(),
+  SMTP_FROM_NAME: Joi.string().default('Argos Clone'),
+  SMTP_FROM_EMAIL: Joi.string().default('no-reply@argos.local'),
 
   // Local upload destination (Phase 2 introduces Multer + sharp).
   UPLOAD_DIR: Joi.string().default('./uploads'),

@@ -9,12 +9,11 @@ import {
   ParseUUIDPipe,
   Req,
   Res,
-  UseGuards,
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { BasketService } from './basket.service'
 import { AddBasketItemDto, UpdateBasketItemDto, MergeBasketDto } from './dto/basket.dto'
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard'
+import { Public } from '../common/decorators/public.decorator'
 import { v4 as uuidv4 } from 'uuid'
 
 const SESSION_COOKIE = 'argos_session'
@@ -39,6 +38,7 @@ export class BasketController {
 
   /** Get current basket (guest or authenticated). */
   @Get()
+  @Public()
   async find(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = (req as any).user
     if (user?.id) {
@@ -52,6 +52,7 @@ export class BasketController {
 
   /** Add item to basket. */
   @Post('items')
+  @Public()
   async addItem(
     @Body() dto: AddBasketItemDto,
     @Req() req: Request,
@@ -74,6 +75,7 @@ export class BasketController {
 
   /** Update item quantity. */
   @Patch('items/:id')
+  @Public()
   async updateItem(
     @Param('id', ParseUUIDPipe) itemId: string,
     @Body() dto: UpdateBasketItemDto,
@@ -86,6 +88,7 @@ export class BasketController {
 
   /** Remove item from basket. */
   @Delete('items/:id')
+  @Public()
   async removeItem(
     @Param('id', ParseUUIDPipe) itemId: string,
     @Req() req: Request,
@@ -97,6 +100,7 @@ export class BasketController {
 
   /** Clear all items. */
   @Delete()
+  @Public()
   async clear(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = (req as any).user
     let basket: any
@@ -112,7 +116,6 @@ export class BasketController {
 
   /** Merge guest basket into user basket (called on login). */
   @Post('merge')
-  @UseGuards(JwtAuthGuard)
   async merge(@Body() dto: MergeBasketDto, @Req() req: Request) {
     const userId = (req as any).user.id
     const sessionId = dto.guestSessionId ?? req.cookies?.[SESSION_COOKIE]

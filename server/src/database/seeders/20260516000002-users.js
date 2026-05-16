@@ -39,7 +39,7 @@ const USERS = [
   },
   {
     id: '00000000-0000-0000-0000-000000000004',
-    email: 'alice@example.com',
+    email: 'alice@mailinator.com',
     first_name: 'Alice',
     last_name: 'Walker',
     role: 'customer',

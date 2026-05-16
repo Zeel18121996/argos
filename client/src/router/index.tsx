@@ -25,6 +25,7 @@ const HelpPage = lazy(() => import('@/pages/HelpPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const AdminProductsPage = lazy(() => import('@/pages/AdminProductsPage'))
 const AdminProductFormPage = lazy(() => import('@/pages/AdminProductFormPage'))
+const AdminOrdersPage = lazy(() => import('@/pages/AdminOrdersPage'))
 
 // Placeholder for pages not yet built
 function ComingSoon({ page }: { page: string }) {
@@ -130,6 +131,7 @@ const router = createBrowserRouter([
       { path: 'admin/products', element: adminWrap(AdminProductsPage) },
       { path: 'admin/products/new', element: adminWrap(AdminProductFormPage) },
       { path: 'admin/products/:id/edit', element: adminWrap(AdminProductFormPage) },
+      { path: 'admin/orders', element: adminWrap(AdminOrdersPage) },
 
       // ── 404 ─────────────────────────────────────────────────────────────
       { path: '*', element: wrap(NotFoundPage) },

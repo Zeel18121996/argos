@@ -15,6 +15,11 @@ import { ProductsModule } from './products/products.module'
 import { SearchModule } from './search/search.module'
 import { BasketModule } from './basket/basket.module'
 import { WishlistModule } from './wishlist/wishlist.module'
+import { OrdersModule } from './orders/orders.module'
+import { PaymentsModule } from './payments/payments.module'
+import { CheckoutModule } from './checkout/checkout.module'
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
+import { RolesGuard } from './common/guards/roles.guard'
 
 @Module({
   imports: [
@@ -74,8 +79,15 @@ import { WishlistModule } from './wishlist/wishlist.module'
     SearchModule,
     BasketModule,
     WishlistModule,
+    OrdersModule,
+    PaymentsModule,
+    CheckoutModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: 'APP_GUARD', useClass: JwtAuthGuard },
+    { provide: 'APP_GUARD', useClass: RolesGuard },
+  ],
 })
 export class AppModule {}

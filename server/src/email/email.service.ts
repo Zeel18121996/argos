@@ -25,15 +25,29 @@ export class EmailService {
   constructor(private readonly config: ConfigService) {
     const host = this.config.get<string>('SMTP_HOST', 'mailhog')
     const port = Number(this.config.get<number>('SMTP_PORT', 1025))
-    this.from = this.config.get<string>('SMTP_FROM', 'Argos Clone <no-reply@argos.local>')
+    const secure = this.config.get<string>('SMTP_SECURE', 'false') === 'true'
+    const user = this.config.get<string>('SMTP_USER')
+    const pass = this.config.get<string>('SMTP_PASS')
+    const fromName = this.config.get<string>('SMTP_FROM_NAME', 'Argos Clone')
+    const fromEmail = this.config.get<string>('SMTP_FROM_EMAIL', 'no-reply@argos.local')
+    this.from = `${fromName} <${fromEmail}>`
 
-    this.transporter = nodemailer.createTransport({
+    const transportConfig: nodemailer.TransportOptions = {
       host,
       port,
-      // MailHog doesn't require TLS/auth
-      secure: false,
-      ignoreTLS: true,
-    })
+      secure,
+    } as any
+
+    if (user && pass) {
+      ;(transportConfig as any).auth = { user, pass }
+    }
+
+    if (!secure && !user) {
+      // MailHog / local dev — no TLS/auth needed
+      ;(transportConfig as any).ignoreTLS = true
+    }
+
+    this.transporter = nodemailer.createTransport(transportConfig)
   }
 
   async send(opts: SendOptions): Promise<void> {
@@ -64,6 +78,30 @@ export class EmailService {
         resetUrl,
         '',
         'This link expires in 1 hour. If you did not request a reset, ignore this email.',
+        '',
+        '— Argos Clone',
+      ].join('\n'),
+    })
+  }
+
+  async sendOrderConfirmation(
+    to: string,
+    orderNumber: string,
+    total: number,
+    itemCount: number,
+  ): Promise<void> {
+    const totalStr = `£${(total / 100).toFixed(2)}`
+    await this.send({
+      to,
+      subject: `Order confirmed — ${orderNumber}`,
+      text: [
+        'Thank you for your order!',
+        '',
+        `Order number: ${orderNumber}`,
+        `Items: ${itemCount}`,
+        `Total: ${totalStr}`,
+        '',
+        'You can track your order at: http://localhost:3000/order/tracking',
         '',
         '— Argos Clone',
       ].join('\n'),

@@ -19,6 +19,12 @@ Admin v1 ships only these areas. Anything outside this list is deferred to a fut
 | People       | `AdminCustomersPage` (+ detail drawer)       | `/admin/users`                |
 | (admin only) | `AdminRolesAction` inline in CustomersPage   | `PATCH /admin/users/:id/role` |
 
+**Inventory / Stock scope:**
+
+- `AdminProductsPage` shows a stock badge per row: green (`>20`), yellow (`>0`), red (`0`).
+- `AdminProductFormPage` exposes `stockCount` for the base product and `stockCount` per variant in the variant editor.
+- Stock decrements automatically on confirmed orders and restores on cancellations — no manual stock journal in v1.
+
 **Out of scope for v1:** drag-to-reorder categories, rich charts (recharts/visx), audit-log page, low-stock alerts, top-products widget, promotions UI (Phase 6), reviews moderation UI (Phase 6), bulk CSV import/export. Don't build them.
 
 ---

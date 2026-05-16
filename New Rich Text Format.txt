@@ -76,6 +76,7 @@ Each phase ends with: working end-to-end vertical slice + tests + git commit on 
 ### Phase 2 — Catalogue (the foundation both panels depend on)
 - **DB:** migrations for `products`, `product_images`, `product_variants`; tsvector index on `name||description||brand`
 - **Backend:** `ProductsModule` (CRUD + list with `page/limit/sortBy/brands[]/minPrice/maxPrice/inStock/onOffer` query DTO + category filter); `SearchModule` (`GET /search?q=`) using Postgres full-text; admin POST/PATCH/DELETE behind `@Roles('staff')`; image upload endpoint `POST /admin/products/:id/images` using Multer + sharp (3 sizes)
+- **Stock / Inventory:** `ProductModel.stockCount` and `ProductVariantModel.stockCount` tracked. Basket add/update validates against available stock (product + variant). Checkout re-validates stock before payment. Order creation decrements stock atomically; order cancellation restores stock. Admin products table shows stock badges.
 - **Seeders:** ~80 realistic products distributed across all categories with images (use Argos product names + placeholder images via `picsum.photos` deterministic seeded URLs)
 - **Frontend (customer):**
   - `HomePage` → CategoryStrip + 3 ProductCarousels + HeroBanner
@@ -92,7 +93,7 @@ Each phase ends with: working end-to-end vertical slice + tests + git commit on 
 
 ### Phase 4 — Checkout, Orders, Payments
 - **DB:** migrations for `orders`, `order_items` (price snapshots)
-- **Backend:** `CheckoutModule` — session-based 3 steps (address → delivery method → payment); `OrdersModule` — create on payment success, list/detail/cancel, public tracking; `PaymentsModule` — simulated card processor (always succeeds except card `4000000000000002` which always fails — matches Stripe's test card pattern, no real Stripe key required); webhook simulator endpoint to advance order status
+- **Backend:** `CheckoutModule` — session-based 3 steps (address → delivery method → payment); `OrdersModule` — create on payment success, list/detail/cancel, public tracking; `PaymentsModule` — simulated card processor (always succeeds except card `4000000000000002` which always fails — matches Stripe's test card pattern, no real Stripe key required); webhook simulator endpoint to advance order status. Stock validation runs at basket add/update and again at checkout before payment. Order creation atomically decrements `ProductModel.stockCount` and `ProductVariantModel.stockCount`. Order cancellation restores stock.
 - **Frontend (customer):** `CheckoutPage` (CheckoutStepper + AddressStep + DeliveryStep + PaymentStep + OrderSummaryBox sidebar); `OrderConfirmationPage` (green tick + order number + summary); `OrderTrackingPage` (public form: order ID + postcode); `AccountOrdersPage` + `AccountOrderDetailPage` (status timeline)
 - **Frontend (admin):** `AdminOrdersPage` (DataTable with status filter, date range); `AdminOrderDetailPage` (status update, refund button, notes); order status update emits webhook simulator
 - **Acceptance:** complete checkout end-to-end with simulated card → order row created → email "sent" (mailhog) → customer sees confirmation + new row in /account/orders → admin can advance status (pending→confirmed→processing→shipped→delivered) → public tracking page reflects status.

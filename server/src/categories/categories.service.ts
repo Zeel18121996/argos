@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
 import { CategoryModel } from './models/category.model'
+import type { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto'
 
 export interface CategoryTree {
   id: string
@@ -46,6 +47,51 @@ export class CategoriesService {
     return cat
   }
 
+  async create(dto: CreateCategoryDto) {
+    let depth = 0
+    if (dto.parentId) {
+      const parent = await this.categoryModel.findByPk(dto.parentId)
+      if (!parent) throw new NotFoundException('Parent category not found')
+      depth = parent.depth + 1
+    }
+
+    const cat = await this.categoryModel.create({
+      ...dto,
+      depth,
+      isActive: true,
+    } as any)
+
+    return this.toCategory(cat)
+  }
+
+  async update(id: string, dto: UpdateCategoryDto) {
+    const cat = await this.categoryModel.findByPk(id)
+    if (!cat) throw new NotFoundException(`Category ${id} not found`)
+
+    if (dto.parentId !== undefined) {
+      if (dto.parentId === null) {
+        cat.depth = 0
+      } else {
+        const parent = await this.categoryModel.findByPk(dto.parentId)
+        if (!parent) throw new NotFoundException('Parent category not found')
+        cat.depth = parent.depth + 1
+      }
+    }
+
+    cat.set({ ...dto } as any)
+    await cat.save()
+
+    return this.toCategory(cat)
+  }
+
+  async deactivate(id: string) {
+    const cat = await this.categoryModel.findByPk(id)
+    if (!cat) throw new NotFoundException(`Category ${id} not found`)
+    cat.isActive = false
+    await cat.save()
+    return { message: 'Category deactivated' }
+  }
+
   private buildTree(cats: CategoryTree[], parentId: string | null): CategoryTree[] {
     return cats
       .filter((c) => c.parentId === parentId)
@@ -53,5 +99,20 @@ export class CategoriesService {
         ...c,
         children: this.buildTree(cats, c.id),
       }))
+  }
+
+  private toCategory(cat: CategoryModel) {
+    return {
+      id: cat.id,
+      slug: cat.slug,
+      name: cat.name,
+      parentId: cat.parentId,
+      depth: cat.depth,
+      imageUrl: cat.imageUrl,
+      sortOrder: cat.sortOrder,
+      isActive: cat.isActive,
+      createdAt: cat.createdAt,
+      updatedAt: cat.updatedAt,
+    }
   }
 }

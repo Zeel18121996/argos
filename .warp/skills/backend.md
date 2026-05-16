@@ -471,6 +471,28 @@ async function bootstrap() {
 
 ---
 
+## Stock / Inventory
+
+Stock is tracked at two levels:
+
+- `ProductModel.stockCount` — base product stock
+- `ProductVariantModel.stockCount` — per-variant stock
+
+Effective available quantity for a basket line = `min(product.stockCount, variant.stockCount)` when a variant is selected, otherwise `product.stockCount`.
+
+### Stock validation rules
+
+1. **Basket add/update** — `BasketService.addItem()` and `updateItem()` check current stock before persisting. Rejects with `400` and message: `Only {maxStock} item(s) available. You already have {existing} in your basket.`
+2. **Checkout** — `CheckoutService.validateStock()` runs **before payment processing** against live product/variant rows. Rejects with `400` if any item exceeds stock or product became inactive.
+3. **Order creation** — `OrdersService.createFromBasket()` calls `decrementStock()` immediately after creating `OrderItemModel` rows. Uses `Sequelize.literal('stock_count - {qty}')` for atomic decrement.
+4. **Order cancellation** — `OrdersService.cancel()` and `updateStatus()` to `'cancelled'` call `restoreStock()` to add quantities back via `Sequelize.literal('stock_count + {qty}')`.
+
+### Admin product form
+
+`AdminProductFormPage` exposes `stockCount` as a numeric input. Variant editor shows `stockCount` per variant. Changes take effect immediately for future basket/checkout operations.
+
+---
+
 ## Common Pitfalls
 
 - Do NOT put business logic in controllers. Controllers are thin — they call service methods only.
@@ -480,3 +502,4 @@ async function bootstrap() {
 - Always use `ParseUUIDPipe` on `:id` params to validate UUID format before hitting the database.
 - Use `NotFoundException` (404) when a record is not found; do NOT return `null` from service methods.
 - Money is INTEGER pence. Never DECIMAL or FLOAT.
+- Stock counts are INTEGER. Never allow negative stock — the validation layer should reject overselling before decrement.

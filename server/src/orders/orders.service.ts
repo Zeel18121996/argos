@@ -8,6 +8,7 @@ import { ProductImageModel } from '../products/models/product-image.model'
 import { ProductVariantModel } from '../products/models/product-variant.model'
 import { buildMeta } from '../common/dto/paginated-response.dto'
 import type { QueryOrderDto, AdminQueryOrderDto, UpdateOrderStatusDto } from './dto/order.dto'
+import { Sequelize } from 'sequelize-typescript'
 
 export interface OrderItemResponse {
   id: string
@@ -65,6 +66,7 @@ export class OrdersService {
     @InjectModel(OrderModel) private readonly orderModel: typeof OrderModel,
     @InjectModel(OrderItemModel) private readonly itemModel: typeof OrderItemModel,
     @InjectModel(ProductModel) private readonly productModel: typeof ProductModel,
+    @InjectModel(ProductVariantModel) private readonly variantModel: typeof ProductVariantModel,
   ) {}
 
   async findUserOrders(userId: string, query: QueryOrderDto) {
@@ -168,6 +170,10 @@ export class OrdersService {
     })
 
     await this.itemModel.bulkCreate(itemsData as any)
+
+    // Decrement stock for all items
+    await this.decrementStock(basketItems)
+
     return order
   }
 
@@ -179,6 +185,10 @@ export class OrdersService {
       throw new ForbiddenException('Order cannot be cancelled at this stage')
     order.status = 'cancelled'
     await order.save()
+
+    // Restore stock for cancelled order
+    await this.restoreStock(orderId)
+
     return order
   }
 
@@ -228,11 +238,54 @@ export class OrdersService {
     const next = dto.next as OrderStatus
     if (!VALID_TRANSITIONS[order.status].includes(next))
       throw new ForbiddenException(`Cannot transition from ${order.status} to ${next}`)
+
+    const previousStatus = order.status
     order.status = next
     if (dto.trackingNumber) order.trackingNumber = dto.trackingNumber
     if (dto.note) order.notes = order.notes ? `${order.notes}\n${dto.note}` : dto.note
     await order.save()
+
+    // Restore stock if moving to cancelled
+    if (next === 'cancelled' && previousStatus !== 'cancelled') {
+      await this.restoreStock(orderId)
+    }
+
     return order
+  }
+
+  /** Decrement stock for all items in an order */
+  private async decrementStock(
+    items: Array<{ productId: string; variantId?: string | null; quantity: number }>,
+  ): Promise<void> {
+    for (const item of items) {
+      await this.productModel.update(
+        { stockCount: Sequelize.literal(`stock_count - ${item.quantity}`) },
+        { where: { id: item.productId } },
+      )
+      if (item.variantId) {
+        await this.variantModel.update(
+          { stockCount: Sequelize.literal(`stock_count - ${item.quantity}`) },
+          { where: { id: item.variantId } },
+        )
+      }
+    }
+  }
+
+  /** Restore stock for all items in a cancelled order */
+  private async restoreStock(orderId: string): Promise<void> {
+    const items = await this.itemModel.findAll({ where: { orderId } })
+    for (const item of items) {
+      await this.productModel.update(
+        { stockCount: Sequelize.literal(`stock_count + ${item.quantity}`) },
+        { where: { id: item.productId } },
+      )
+      if (item.variantId) {
+        await this.variantModel.update(
+          { stockCount: Sequelize.literal(`stock_count + ${item.quantity}`) },
+          { where: { id: item.variantId } },
+        )
+      }
+    }
   }
 
   private toSummary(order: OrderModel): OrderSummary {

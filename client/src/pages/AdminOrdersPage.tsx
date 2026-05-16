@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useGetAdminOrdersQuery, useUpdateAdminOrderStatusMutation } from '@/services/ordersApi'
 import { formatPriceFromPounds } from '@/utils/format'
-import { Search, ArrowLeft, ChevronLeft, ChevronRight, Package } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Package } from 'lucide-react'
 import { formatDate } from '@/utils/format'
 import { cn } from '@/utils/cn'
 
@@ -34,16 +33,8 @@ export default function AdminOrdersPage() {
   const meta = data?.meta
 
   return (
-    <div className="page-container py-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Link to="/admin" className="text-argos-gray hover:text-argos-dark transition-colors">
-            <ArrowLeft size={20} />
-          </Link>
-          <h1 className="text-2xl font-bold text-argos-dark">Orders</h1>
-        </div>
-      </div>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold text-argos-dark">Orders</h1>
 
       {/* Filters */}
       <div className="bg-white border border-argos-border rounded p-4 mb-4 flex flex-wrap gap-4 items-center">

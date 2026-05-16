@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   useGetAdminProductsQuery,
   useDeleteAdminProductMutation,
 } from '@/services/adminProductsApi'
 import { useGetCategoriesQuery } from '@/services/categoriesApi'
 import { formatPriceFromPounds } from '@/utils/format'
-import { Search, Plus, ChevronDown, ChevronUp, MoreHorizontal, ArrowLeft } from 'lucide-react'
+import { Search, Plus, ChevronDown, ChevronUp, MoreHorizontal } from 'lucide-react'
 import { resolveImageUrl } from '@/utils/imageUrl'
 
 export default function AdminProductsPage() {
@@ -32,15 +32,9 @@ export default function AdminProductsPage() {
   const meta = data?.meta
 
   return (
-    <div className="page-container py-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Link to="/admin" className="text-argos-gray hover:text-argos-dark transition-colors">
-            <ArrowLeft size={20} />
-          </Link>
-          <h1 className="text-2xl font-bold text-argos-dark">Products</h1>
-        </div>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-argos-dark">Products</h1>
         <button
           onClick={() => navigate('/admin/products/new')}
           className="flex items-center gap-2 bg-argos-green text-white font-bold px-4 py-2 rounded hover:bg-argos-green-dark transition-colors"

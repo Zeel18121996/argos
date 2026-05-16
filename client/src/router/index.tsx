@@ -1,6 +1,7 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { lazy, Suspense, type ReactElement } from 'react'
 import { RootLayout } from '@/components/layout/RootLayout'
+import { AdminLayout } from '@/components/layout/AdminLayout'
 import { ProtectedRoute } from '@/components/Common/ProtectedRoute'
 import { StaffRoute } from '@/components/Common/StaffRoute'
 
@@ -26,6 +27,9 @@ const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
 const AdminProductsPage = lazy(() => import('@/pages/AdminProductsPage'))
 const AdminProductFormPage = lazy(() => import('@/pages/AdminProductFormPage'))
 const AdminOrdersPage = lazy(() => import('@/pages/AdminOrdersPage'))
+const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboardPage'))
+const AdminCustomersPage = lazy(() => import('@/pages/AdminCustomersPage'))
+const AdminCategoriesPage = lazy(() => import('@/pages/AdminCategoriesPage'))
 
 // Placeholder for pages not yet built
 function ComingSoon({ page }: { page: string }) {
@@ -127,11 +131,80 @@ const router = createBrowserRouter([
       { path: 'account/profile', element: protectedWrap(ProfilePage) },
 
       // ── Admin (staff/admin only) ────────────────
-      { path: 'admin', element: adminWrap(AdminProductsPage) },
-      { path: 'admin/products', element: adminWrap(AdminProductsPage) },
-      { path: 'admin/products/new', element: adminWrap(AdminProductFormPage) },
-      { path: 'admin/products/:id/edit', element: adminWrap(AdminProductFormPage) },
-      { path: 'admin/orders', element: adminWrap(AdminOrdersPage) },
+      {
+        path: 'admin',
+        element: (
+          <StaffRoute>
+            <AdminLayout />
+          </StaffRoute>
+        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminDashboardPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'dashboard',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminDashboardPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'products',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminProductsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'products/new',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminProductFormPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'products/:id/edit',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminProductFormPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'orders',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminOrdersPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'customers',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminCustomersPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'categories',
+            element: (
+              <Suspense fallback={<PageLoader />}>
+                <AdminCategoriesPage />
+              </Suspense>
+            ),
+          },
+        ],
+      },
 
       // ── 404 ─────────────────────────────────────────────────────────────
       { path: '*', element: wrap(NotFoundPage) },

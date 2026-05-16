@@ -23,6 +23,8 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage'))
 const StoreFinderPage = lazy(() => import('@/pages/StoreFinderPage'))
 const HelpPage = lazy(() => import('@/pages/HelpPage'))
 const NotFoundPage = lazy(() => import('@/pages/NotFoundPage'))
+const AdminProductsPage = lazy(() => import('@/pages/AdminProductsPage'))
+const AdminProductFormPage = lazy(() => import('@/pages/AdminProductFormPage'))
 
 // Placeholder for pages not yet built
 function ComingSoon({ page }: { page: string }) {
@@ -60,6 +62,16 @@ function protectedWrap(Component: React.LazyExoticComponent<() => ReactElement>)
   )
 }
 
+function adminWrap(Component: React.LazyExoticComponent<() => ReactElement>) {
+  return (
+    <StaffRoute>
+      <Suspense fallback={<PageLoader />}>
+        <Component />
+      </Suspense>
+    </StaffRoute>
+  )
+}
+
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -67,8 +79,8 @@ const router = createBrowserRouter([
       // ── Public ──────────────────────────────────────────────────────────
       { index: true, element: wrap(HomePage) },
       { path: 'browse/*', element: wrap(BrowsePage) },
-      { path: 'search/:query', element: wrap(SearchPage) },
-      { path: 'product/:id', element: wrap(ProductDetailPage) },
+      { path: 'search', element: wrap(SearchPage) },
+      { path: 'product/:slug', element: wrap(ProductDetailPage) },
       { path: 'basket', element: wrap(BasketPage) },
       { path: 'order/tracking', element: wrap(OrderTrackingPage) },
       { path: 'stores', element: wrap(StoreFinderPage) },
@@ -113,27 +125,11 @@ const router = createBrowserRouter([
       { path: 'account/wishlist', element: protectedWrap(WishlistPage) },
       { path: 'account/profile', element: protectedWrap(ProfilePage) },
 
-      // ── Admin (staff/admin only — full panel in Phase 5) ────────────────
-      {
-        path: 'admin',
-        element: (
-          <StaffRoute>
-            <Suspense fallback={<PageLoader />}>
-              <ComingSoon page="Admin dashboard" />
-            </Suspense>
-          </StaffRoute>
-        ),
-      },
-      {
-        path: 'admin/*',
-        element: (
-          <StaffRoute>
-            <Suspense fallback={<PageLoader />}>
-              <ComingSoon page="Admin section" />
-            </Suspense>
-          </StaffRoute>
-        ),
-      },
+      // ── Admin (staff/admin only) ────────────────
+      { path: 'admin', element: adminWrap(AdminProductsPage) },
+      { path: 'admin/products', element: adminWrap(AdminProductsPage) },
+      { path: 'admin/products/new', element: adminWrap(AdminProductFormPage) },
+      { path: 'admin/products/:id/edit', element: adminWrap(AdminProductFormPage) },
 
       // ── 404 ─────────────────────────────────────────────────────────────
       { path: '*', element: wrap(NotFoundPage) },

@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Search, ShoppingCart, User, Menu, X, ChevronDown, LogOut } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGetCategoriesQuery } from '@/services/categoriesApi'
+import { useGetBasketQuery } from '@/services/basketApi'
 import { useAppSelector, useAppDispatch } from '@/app/store'
-import { setMegaMenuOpen, setMobileNavOpen } from '@/features/ui/uiSlice'
+import { setMegaMenuOpen, setMobileNavOpen, setBasketDrawerOpen } from '@/features/ui/uiSlice'
 import { useScrolled } from '@/hooks/useScrolled'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/utils/cn'
@@ -249,11 +250,14 @@ function AccountButton() {
 
 // ── Basket icon ───────────────────────────────────────────────────────────────
 function BasketButton() {
-  const itemCount = useAppSelector((s) => s.basket.itemCount)
+  const { data: basket } = useGetBasketQuery()
+  const itemCount = basket?.summary.itemCount ?? 0
+  const dispatch = useAppDispatch()
 
   return (
-    <Link
-      to="/basket"
+    <button
+      type="button"
+      onClick={() => dispatch(setBasketDrawerOpen(true))}
       className="relative flex flex-col items-center gap-0.5 text-argos-gray-700 hover:text-argos-blue focus-ring rounded px-1 transition-colors"
       aria-label={`Shopping basket${itemCount > 0 ? `, ${itemCount} items` : ''}`}
     >
@@ -269,7 +273,7 @@ function BasketButton() {
         )}
       </div>
       <span className="text-2xs leading-none hidden lg:block">Basket</span>
-    </Link>
+    </button>
   )
 }
 

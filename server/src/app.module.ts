@@ -11,6 +11,10 @@ import { UsersModule } from './users/users.module'
 import { AuthModule } from './auth/auth.module'
 import { AdminModule } from './admin/admin.module'
 import { EmailModule } from './email/email.module'
+import { ProductsModule } from './products/products.module'
+import { SearchModule } from './search/search.module'
+import { BasketModule } from './basket/basket.module'
+import { WishlistModule } from './wishlist/wishlist.module'
 
 @Module({
   imports: [
@@ -66,7 +70,10 @@ import { EmailModule } from './email/email.module'
     AuthModule,
     AdminModule,
     CategoriesModule,
-    // ProductsModule, BasketModule, etc. — added in later phases
+    ProductsModule,
+    SearchModule,
+    BasketModule,
+    WishlistModule,
   ],
   controllers: [AppController],
   providers: [AppService],

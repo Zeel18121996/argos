@@ -5,6 +5,8 @@ interface UIState {
   isMobileNavOpen: boolean
   isBasketDrawerOpen: boolean
   isSearchOpen: boolean
+  toastMessage: string | null
+  toastType: 'success' | 'error' | 'info'
 }
 
 const initialState: UIState = {
@@ -12,6 +14,8 @@ const initialState: UIState = {
   isMobileNavOpen: false,
   isBasketDrawerOpen: false,
   isSearchOpen: false,
+  toastMessage: null,
+  toastType: 'success',
 }
 
 const uiSlice = createSlice({
@@ -36,6 +40,16 @@ const uiSlice = createSlice({
       state.isBasketDrawerOpen = false
       state.isSearchOpen = false
     },
+    showToast: (
+      state,
+      action: PayloadAction<{ message: string; type?: 'success' | 'error' | 'info' }>,
+    ) => {
+      state.toastMessage = action.payload.message
+      state.toastType = action.payload.type ?? 'success'
+    },
+    hideToast: (state) => {
+      state.toastMessage = null
+    },
   },
 })
 
@@ -45,6 +59,8 @@ export const {
   setBasketDrawerOpen,
   setSearchOpen,
   closeAllOverlays,
+  showToast,
+  hideToast,
 } = uiSlice.actions
 
 export default uiSlice.reducer

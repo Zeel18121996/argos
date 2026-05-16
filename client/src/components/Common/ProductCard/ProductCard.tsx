@@ -5,11 +5,16 @@ import { cn } from '@/utils/cn'
 import { formatPriceFromPounds } from '@/utils/format'
 import { buildPath } from '@/constants/path'
 import { useCart } from '@/hooks/useCart'
-import { useAppDispatch, useAppSelector } from '@/hooks/useRedux'
-import { toggleWishlist } from '@/store/slices/wishlistSlice'
+import { useAppSelector } from '@/hooks/useRedux'
+import {
+  useGetWishlistQuery,
+  useAddWishlistItemMutation,
+  useRemoveWishlistItemMutation,
+} from '@/services/wishlistApi'
 import type { Product } from '@/interfaces/product.interface'
 import Rating from '@/components/Common/Rating/Rating'
 import Badge from '@/components/Common/Badge/Badge'
+import { resolveImageUrl } from '@/utils/imageUrl'
 
 interface Props {
   product: Product
@@ -17,15 +22,20 @@ interface Props {
 }
 
 const ProductCard: React.FC<Props> = ({ product, className }) => {
-  const dispatch = useAppDispatch()
   const { handleAddToCart, isInCart } = useCart()
-  const wishlistItems = useAppSelector((s) => s.wishlist.items)
-  const isWishlisted = wishlistItems.some((p) => p.id === product.id)
+  const { data: wishlistItems = [] } = useGetWishlistQuery()
+  const [addWishlist] = useAddWishlistItemMutation()
+  const [removeWishlist] = useRemoveWishlistItemMutation()
+  const isWishlisted = wishlistItems.some((w) => w.productId === product.id)
   const inCart = isInCart(product.id)
 
-  const handleWishlist = (e: React.MouseEvent) => {
+  const handleWishlist = async (e: React.MouseEvent) => {
     e.preventDefault()
-    dispatch(toggleWishlist(product))
+    if (isWishlisted) {
+      await removeWishlist(product.id).unwrap()
+    } else {
+      await addWishlist(product.id).unwrap()
+    }
   }
 
   const handleAddToBasket = (e: React.MouseEvent) => {
@@ -33,8 +43,8 @@ const ProductCard: React.FC<Props> = ({ product, className }) => {
     if (product.inStock) handleAddToCart(product)
   }
 
-  const discount = product.wasPrice
-    ? Math.round(((product.wasPrice - product.price) / product.wasPrice) * 100)
+  const discount = product.compareAtPrice
+    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
     : null
 
   return (
@@ -59,7 +69,7 @@ const ProductCard: React.FC<Props> = ({ product, className }) => {
 
       {/* Badges */}
       <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
-        {product.isSale && discount && <Badge label={`Save ${discount}%`} variant="sale" />}
+        {product.isOnOffer && discount && <Badge label={`Save ${discount}%`} variant="sale" />}
         {product.isNew && <Badge label="New" variant="new" />}
         {product.isClearance && <Badge label="Clearance" variant="clearance" />}
         {!product.inStock && <Badge label="Out of stock" variant="outOfStock" />}
@@ -68,7 +78,7 @@ const ProductCard: React.FC<Props> = ({ product, className }) => {
       {/* Image */}
       <div className="relative overflow-hidden bg-argos-gray-bg aspect-square">
         <img
-          src={product.images[0]}
+          src={resolveImageUrl(product.images[0])}
           alt={product.name}
           className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
           loading="lazy"
@@ -83,22 +93,25 @@ const ProductCard: React.FC<Props> = ({ product, className }) => {
         </h3>
 
         {/* Rating */}
-        <Rating rating={product.rating} reviewCount={product.reviewCount} className="mb-2" />
+        <Rating rating={product.ratingAverage} reviewCount={product.reviewCount} className="mb-2" />
 
         {/* Price — 16px / 700 / 24px (matches live Argos) */}
         <div className="mb-1.5">
-          {product.isSale && product.wasPrice && (
+          {product.isOnOffer && product.compareAtPrice && (
             <div className="text-[14px] font-medium text-argos-gray-mid capitalize mb-0.5">
               Less than half price
             </div>
           )}
           <div className="flex items-baseline gap-2 flex-wrap">
             <span className="text-[16px] leading-[24px] font-bold text-argos-dark">
-              {formatPriceFromPounds(product.price)}
+              {formatPriceFromPounds(product.price / 100)}
             </span>
-            {product.wasPrice && (
+            {product.compareAtPrice && (
               <span className="text-[14px] text-argos-gray-mid">
-                Was <span className="line-through">{formatPriceFromPounds(product.wasPrice)}</span>
+                Was{' '}
+                <span className="line-through">
+                  {formatPriceFromPounds(product.compareAtPrice / 100)}
+                </span>
               </span>
             )}
           </div>

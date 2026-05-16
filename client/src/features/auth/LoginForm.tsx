@@ -8,6 +8,7 @@ import InputField from '@/components/Form/InputField'
 import PasswordField from '@/components/Form/PasswordField'
 import Button from '@/components/Common/Button/Button'
 import { useLoginMutation } from '@/services/authApi'
+import { useMergeBasketMutation } from '@/services/basketApi'
 import { setAuth, setAuthError } from '@/features/auth/authSlice'
 import { useAppDispatch } from '@/app/store'
 
@@ -30,6 +31,7 @@ export function LoginForm() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const [login, { isLoading }] = useLoginMutation()
+  const [mergeBasket] = useMergeBasketMutation()
   const [serverError, setServerError] = useState<string | null>(null)
 
   const {
@@ -47,6 +49,13 @@ export function LoginForm() {
       const result = await login(values).unwrap()
       dispatch(setAuth({ user: result.user, accessToken: result.accessToken }))
       toast.success(`Welcome back, ${result.user.firstName}`)
+
+      // Merge guest basket into user basket
+      try {
+        await mergeBasket({}).unwrap()
+      } catch {
+        // ignore merge errors
+      }
 
       // Role-based redirect: staff/admin → /admin, customers honour successUrl, default /
       const successUrl = params.get('successUrl')

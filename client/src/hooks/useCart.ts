@@ -1,57 +1,81 @@
+import { useCallback } from 'react'
 import { useAppSelector, useAppDispatch } from './useRedux'
 import {
-  addToCart,
-  removeFromCart,
-  updateQuantity,
-  saveForLater,
-  moveToCart,
-  clearCart,
-} from '@/store/slices/cartSlice'
-import { showToast } from '@/store/slices/uiSlice'
+  useGetBasketQuery,
+  useAddBasketItemMutation,
+  useUpdateBasketItemMutation,
+  useRemoveBasketItemMutation,
+  useClearBasketMutation,
+} from '@/services/basketApi'
+import { setBasketDrawerOpen } from '@/features/ui/uiSlice'
+import { toast } from 'sonner'
 import type { Product } from '@/interfaces/product.interface'
-import type { CartSummary } from '@/interfaces/cart.interface'
+
+export interface CartSummary {
+  itemCount: number
+  subtotal: number
+  deliveryCost: number
+  voucherDiscount: number
+  total: number
+}
 
 export const useCart = () => {
   const dispatch = useAppDispatch()
-  const { items, voucherCode, voucherDiscount } = useAppSelector((s) => s.cart)
+  const { data: basket, isLoading } = useGetBasketQuery()
+  const [addItem] = useAddBasketItemMutation()
+  const [updateItem] = useUpdateBasketItemMutation()
+  const [removeItem] = useRemoveBasketItemMutation()
+  const [clearBasket] = useClearBasketMutation()
 
-  const activeItems = items.filter((i) => !i.savedForLater)
-  const savedItems = items.filter((i) => i.savedForLater)
+  const voucherDiscount = useAppSelector((s) => s.cart.voucherDiscount) ?? 0
 
+  const items = basket?.items ?? []
   const summary: CartSummary = {
-    itemCount: activeItems.reduce((acc, i) => acc + i.quantity, 0),
-    subtotal: activeItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0),
-    deliveryCost: activeItems.reduce((acc, i) => acc + i.quantity, 0) > 0 ? 0 : 0,
+    itemCount: basket?.summary.itemCount ?? 0,
+    subtotal: basket?.summary.subtotal ?? 0,
+    deliveryCost: 0,
     voucherDiscount,
-    total: activeItems.reduce((acc, i) => acc + i.product.price * i.quantity, 0) - voucherDiscount,
+    total: (basket?.summary.subtotal ?? 0) - voucherDiscount,
   }
 
-  const handleAddToCart = (product: Product) => {
-    dispatch(addToCart(product))
-    dispatch(showToast({ message: `${product.name} added to basket`, type: 'success' }))
-  }
+  const handleAddToCart = useCallback(
+    async (product: Product, quantity = 1) => {
+      await addItem({ productId: product.id, quantity }).unwrap()
+      toast.success(`${product.name} added to basket`)
+      dispatch(setBasketDrawerOpen(true))
+    },
+    [addItem, dispatch],
+  )
 
-  const handleRemove = (productId: string) => dispatch(removeFromCart(productId))
-  const handleUpdateQty = (productId: string, quantity: number) =>
-    dispatch(updateQuantity({ productId, quantity }))
-  const handleSaveForLater = (productId: string) => dispatch(saveForLater(productId))
-  const handleMoveToCart = (productId: string) => dispatch(moveToCart(productId))
-  const handleClearCart = () => dispatch(clearCart())
+  const handleRemove = useCallback(
+    async (productId: string) => {
+      const item = items.find((i) => i.productId === productId)
+      if (item) await removeItem(item.id).unwrap()
+    },
+    [items, removeItem],
+  )
 
-  const isInCart = (productId: string) =>
-    items.some((i) => i.product.id === productId && !i.savedForLater)
+  const handleUpdateQty = useCallback(
+    async (productId: string, quantity: number) => {
+      const item = items.find((i) => i.productId === productId)
+      if (item) await updateItem({ itemId: item.id, quantity }).unwrap()
+    },
+    [items, updateItem],
+  )
+
+  const handleClearCart = useCallback(async () => {
+    await clearBasket().unwrap()
+  }, [clearBasket])
+
+  const isInCart = (productId: string) => items.some((i) => i.productId === productId)
 
   return {
     items,
-    activeItems,
-    savedItems,
     summary,
-    voucherCode,
+    isLoading,
     handleAddToCart,
     handleRemove,
     handleUpdateQty,
-    handleSaveForLater,
-    handleMoveToCart,
     handleClearCart,
     isInCart,
   }

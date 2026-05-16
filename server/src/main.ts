@@ -5,9 +5,12 @@ import * as cookieParser from 'cookie-parser'
 import { AppModule } from './app.module'
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'
 import { ResponseWrapperInterceptor } from './common/interceptors/response-wrapper.interceptor'
+import { NestExpressApplication } from '@nestjs/platform-express'
+import { join } from 'path'
+import { promises as fs } from 'fs'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule)
+  const app = await NestFactory.create<NestExpressApplication>(AppModule)
 
   const config = app.get(ConfigService)
   const clientUrl = config.get<string>('CLIENT_URL', 'http://localhost:3000')
@@ -49,9 +52,21 @@ async function bootstrap() {
   // Global exception filter — consistent error shape
   app.useGlobalFilters(new HttpExceptionFilter())
 
+  // Ensure uploads directory exists
+  const uploadsDir = join(__dirname, '..', 'uploads')
+  try {
+    await fs.access(uploadsDir)
+  } catch {
+    await fs.mkdir(uploadsDir, { recursive: true })
+  }
+
+  // Static file serving for uploaded product images
+  app.useStaticAssets(uploadsDir, { prefix: '/static/uploads' })
+
   await app.listen(port)
   console.log(`🚀 Argos API running on http://localhost:${port}/api/v1`)
   console.log(`🏥 Health check: http://localhost:${port}/api/v1/health`)
+  console.log(`🖼️  Static uploads: http://localhost:${port}/static/uploads`)
 }
 
 bootstrap()

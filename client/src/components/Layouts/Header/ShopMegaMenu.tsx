@@ -111,9 +111,9 @@ const ShopMegaMenu: React.FC = () => {
                 </Link>
 
                 {/* Sub-category links — 15px/400, 3-column grid, matches Argos */}
-                {activeCat.children.length > 0 && (
+                {(activeCat.children?.length ?? 0) > 0 && (
                   <div className="grid grid-cols-3 gap-x-8 gap-y-3">
-                    {activeCat.children.map((child) => (
+                    {activeCat.children?.map((child) => (
                       <Link
                         key={child.id}
                         to={buildPath.category(child.slug)}

@@ -7,6 +7,10 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { envValidationSchema } from './config/env.validation'
 import { CategoriesModule } from './categories/categories.module'
+import { UsersModule } from './users/users.module'
+import { AuthModule } from './auth/auth.module'
+import { AdminModule } from './admin/admin.module'
+import { EmailModule } from './email/email.module'
 
 @Module({
   imports: [
@@ -27,8 +31,11 @@ import { CategoriesModule } from './categories/categories.module'
         uri: config.get<string>('DATABASE_URL'),
         models: [], // models are registered per-feature via SequelizeModule.forFeature()
         autoLoadModels: true, // auto-registers models from forFeature() calls
-        // In development, sync schema automatically (never in production — use migrations)
-        synchronize: config.get<string>('NODE_ENV') === 'development',
+        // In development, sync schema automatically (never in production — use migrations).
+        // Set SEQUELIZE_SYNC=false (or NODE_ENV=production) to disable.
+        synchronize:
+          config.get<string>('SEQUELIZE_SYNC', 'true') === 'true' &&
+          config.get<string>('NODE_ENV') === 'development',
         logging:
           config.get<string>('NODE_ENV') === 'development'
             ? (sql: string) => console.log(sql)
@@ -51,9 +58,15 @@ import { CategoriesModule } from './categories/categories.module'
       },
     ]),
 
+    // ── Cross-cutting ────────────────────────────────────────────────
+    EmailModule,
+
     // ── Feature modules ──────────────────────────────────────────────
+    UsersModule,
+    AuthModule,
+    AdminModule,
     CategoriesModule,
-    // ProductsModule, AuthModule, etc. — added in later phases
+    // ProductsModule, BasketModule, etc. — added in later phases
   ],
   controllers: [AppController],
   providers: [AppService],

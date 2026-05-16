@@ -1,0 +1,9 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
+const path = require('path')
+
+module.exports = {
+  'config':          path.resolve('src/database', 'sequelize.config.js'),
+  'models-path':     path.resolve('src'),
+  'migrations-path': path.resolve('src/database', 'migrations'),
+  'seeders-path':    path.resolve('src/database', 'seeders'),
+}

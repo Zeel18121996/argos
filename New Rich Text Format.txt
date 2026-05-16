@@ -1,0 +1,174 @@
+# Argos Clone — Production-Ready Build Plan
+
+## Context
+
+This is the **AI Acceleration Month — Practical Vibe Coding Activity**: build a fully functional argos.co.uk replica using Claude Code. The deliverables explicitly require Claude Code configuration & setup, Git version control, database integration & API setup, and complete portal replication & testing.
+
+**Current state of the repo** (`E:\Code\ArgosC\`):
+- Monorepo: `client/` (React 19 + Vite 8 + TS + Tailwind 4 + Redux Toolkit + RTK Query) and `server/` (NestJS 10 + Sequelize 6 + Postgres 16 + Redis 7)
+- 7 skill rule files in `.warp/skills/` (frontend, backend, database, design-tokens, pixel-perfect, components, access-control)
+- Detailed `Architecture.md` + `WARP.md` index of skills
+- Categories module is fully implemented end-to-end (DB → API → UI); seeded with 7 top-level Argos categories + ~36 subcategories
+- All 27 customer-facing pages scaffolded but most are placeholder UI — **no real data flows, no auth, no basket, no checkout, no admin panel**
+- **NOT a git repo yet** (no `.git` directory) — must be initialised
+- Docker Compose ready (postgres, redis, server, client)
+
+**Goal:** turn the scaffold into a production-ready Argos clone with **both** a pixel-perfect customer storefront and an admin panel for managing products / categories / orders / customers, all wired to real APIs + database. Phase-by-phase, fully tested.
+
+---
+
+## Approach
+
+Three parallel streams per phase:
+- **A) Skill rule files** — keep them in lockstep with the actual stack so future Claude turns follow the right rules.
+- **B) Backend module** — NestJS + Sequelize, migration → model → service → controller → DTO → seeder.
+- **C) Frontend** — RTK Query slice → page(s) → components.
+
+Each phase ends with: working end-to-end vertical slice + tests + git commit on a feature branch.
+
+### Scope decisions (locked with the user)
+| Area | Decision |
+|---|---|
+| **Payments** | Simulated processor — test card `4000000000000002` fails, all others succeed; internal webhook simulator advances order status. No Stripe SDK / external keys. |
+| **Image storage** | Local `server/uploads/` via Multer + `sharp` (3 sizes: 300², 600², 1200²); served at `/static/uploads/`. No MinIO / S3. |
+| **Scope priority** | **Customer storefront depth first.** Pixel-perfect Home → Browse → PDP → Basket → Checkout → Account is non-negotiable. Admin panel stays **lean** (products CRUD, orders table, customers table) — no audit log, no drag-reorder, no rich dashboard widgets in v1. |
+| **Store finder** | Static list only (table of seeded stores). No Leaflet / map dependency. |
+
+---
+
+## Skill Files — Updates & New Creations
+
+### Refresh existing (drift between docs and actual code)
+- **`WARP.md`** — bump to React 19 / Vite 8 / Tailwind 4 / Sequelize (was incorrectly says React 18 / Vite 5 / Tailwind 3); add references to the new skill files below.
+- **`.warp/skills/frontend.md`** — same version bump; note current `baseApi` already unwraps NestJS `{data, message, timestamp}` envelope (transformResponse already exists in `client/src/app/baseApi.ts`).
+- **`.warp/skills/backend.md`** — remove one stray TypeORM reference ("Do NOT use synchronize: true in TypeORM config" → Sequelize); document that `synchronize: true` is currently active in dev and must be replaced with proper migrations before production.
+- **`Architecture.md`** — replace TypeORM mentions (table 2 references) with Sequelize; section 9 docker-compose mentions `minio` and `mailhog` but actual `docker-compose.yml` has only postgres+redis+server+client — add the missing services.
+
+### Create new skill files in `.warp/skills/`
+1. **`admin-panel.md`** — admin UI patterns: `AdminLayout`, `DataTable` (sortable + paginated + filterable), `AdminFormShell` (with autosave/dirty-tracking), image uploader, multi-step variant editor, status pill chips, action menus. Map admin routes to backend endpoints from `access-control.md`.
+2. **`testing.md`** — client: Vitest + React Testing Library + MSW; server: Jest + Supertest + `@nestjs/testing` with an in-memory Sequelize SQLite for unit tests, real Postgres for e2e. Coverage targets (≥70% on services/hooks/utils). Folder conventions and example specs.
+3. **`git-workflow.md`** — Conventional Commits, branching model (`main` ← `develop` ← `feature/*` / `fix/*`), commit signing optional, PR template with QA checklist, Husky + lint-staged + commitlint config.
+4. **`qa-acceptance.md`** — per-phase acceptance checklist: pages render with skeletons → real data → error/empty states; a11y (focus-visible, ARIA, keyboard); Lighthouse targets (Performance ≥90, A11y ≥95, SEO ≥95); responsive at 360 / 768 / 1280 / 1920.
+5. **`api-contracts.md`** — single source of truth for every endpoint's request shape, response shape (already-unwrapped), error codes, and an OpenAPI snippet. Generated `client/src/types/api.ts` matches.
+
+---
+
+## Phase Plan
+
+> Every phase ends with: ✅ unit tests, ✅ e2e happy path, ✅ branch merged to `develop`, ✅ updated seeders.
+
+### Phase 0 — Foundations (Day 0)
+- `git init`, audit `.gitignore`, initial commit (`chore: initial scaffold import`)
+- Push to a fresh GitHub repo (user creates; Claude pushes)
+- Fix `docker-compose.yml` port mismatch (client points to `:4000` for API, server in compose listens `:4001` — align to `4000`)
+- Add `husky`, `lint-staged`, `commitlint` (Conventional Commits)
+- Add `MailHog` service only to docker-compose (no MinIO — local image storage)
+- Create the 5 new skill files above; update WARP.md/Architecture.md/frontend.md/backend.md (and remove MinIO references in Architecture.md)
+- **Verify:** `docker-compose up` → all services healthy; `git log` shows clean initial commit.
+
+### Phase 1 — Auth & Users (customer + admin login)
+- **DB:** migrations for `users` (incl. `role` column 'customer'|'staff'|'admin'), `addresses`, `refresh_tokens`
+- **Backend:** `AuthModule` (register / login / refresh / logout / forgot-password / reset-password); bcrypt; JWT 15-min access + 7-day refresh in `httpOnly` cookie; `UsersModule` (me, update profile, addresses CRUD); `AdminModule` skeleton with `GET /admin/users`, `PATCH /admin/users/:id/role`
+- **Frontend:** `LoginPage`, `RegisterPage`, `useAuth` hook, `ProtectedRoute` + `StaffRoute` + `AdminRoute`, `authSlice`, refresh interceptor in `baseApi` (retry once on 401)
+- **Seeders:** 1 admin (`admin@argos.local`), 1 staff (`staff@argos.local`), 3 customers
+- **Acceptance:** register → email exists check; login → cookie set + role-based redirect (`customer→/`, `staff/admin→/admin`); silent refresh on stale token; logout revokes refresh row.
+
+### Phase 2 — Catalogue (the foundation both panels depend on)
+- **DB:** migrations for `products`, `product_images`, `product_variants`; tsvector index on `name||description||brand`
+- **Backend:** `ProductsModule` (CRUD + list with `page/limit/sortBy/brands[]/minPrice/maxPrice/inStock/onOffer` query DTO + category filter); `SearchModule` (`GET /search?q=`) using Postgres full-text; admin POST/PATCH/DELETE behind `@Roles('staff')`; image upload endpoint `POST /admin/products/:id/images` using Multer + sharp (3 sizes)
+- **Seeders:** ~80 realistic products distributed across all categories with images (use Argos product names + placeholder images via `picsum.photos` deterministic seeded URLs)
+- **Frontend (customer):**
+  - `HomePage` → CategoryStrip + 3 ProductCarousels + HeroBanner
+  - `BrowsePage` → Breadcrumb + FilterBar + FilterDrawer (mobile) + ProductGrid + Pagination + result count + sort dropdown
+  - `SearchPage` → same layout, "Results for {query}", "Did you mean"
+  - `ProductDetailPage` → ImageGallery + VariantSelector + PriceDisplay + QuantitySelector + AddToTrolley + DeliveryInfo + Description accordion + Specs table + Reviews stub + "You may also like" carousel
+- **Frontend (admin):** `AdminProductsPage` (DataTable with search, brand filter, stock badge, bulk actions, row action menu) + `AdminProductFormPage` (form: identity, pricing, category, images uploader, variants editor) — autosave to draft
+- **Acceptance:** add product in admin → appears immediately on customer site (RTK Query invalidates `Product`); filters return correct counts; sort orders products correctly; deactivate product hides from customer but keeps in admin list.
+
+### Phase 3 — Basket & Wishlist
+- **Backend:** `BasketModule` — guest baskets in Redis keyed by `sessionId` cookie; user baskets in Postgres; `POST /basket/merge` runs on login; `WishlistModule` for authenticated users; promo-code validation hook (stubbed; full promo in Phase 6)
+- **Frontend:** `BasketPage` (two-col: items + sticky OrderSummary); `BasketDrawer` (slide-in on add-to-trolley); `basketSlice` for optimistic UI; `AddToTrolleyButton` with "Added ✓" animation; `WishlistPage`
+- **Acceptance:** add as guest → close tab → reopen → basket persists; log in → guest basket merges; remove last item → empty-state component; quantity stepper updates total live; wishlist toggle works on cards + PDP.
+
+### Phase 4 — Checkout, Orders, Payments
+- **DB:** migrations for `orders`, `order_items` (price snapshots)
+- **Backend:** `CheckoutModule` — session-based 3 steps (address → delivery method → payment); `OrdersModule` — create on payment success, list/detail/cancel, public tracking; `PaymentsModule` — simulated card processor (always succeeds except card `4000000000000002` which always fails — matches Stripe's test card pattern, no real Stripe key required); webhook simulator endpoint to advance order status
+- **Frontend (customer):** `CheckoutPage` (CheckoutStepper + AddressStep + DeliveryStep + PaymentStep + OrderSummaryBox sidebar); `OrderConfirmationPage` (green tick + order number + summary); `OrderTrackingPage` (public form: order ID + postcode); `AccountOrdersPage` + `AccountOrderDetailPage` (status timeline)
+- **Frontend (admin):** `AdminOrdersPage` (DataTable with status filter, date range); `AdminOrderDetailPage` (status update, refund button, notes); order status update emits webhook simulator
+- **Acceptance:** complete checkout end-to-end with simulated card → order row created → email "sent" (mailhog) → customer sees confirmation + new row in /account/orders → admin can advance status (pending→confirmed→processing→shipped→delivered) → public tracking page reflects status.
+
+### Phase 5 — Admin Panel (lean v1: customers + categories + simple dashboard)
+- **Backend:** `GET /admin/users` (list + filter by role / status), `PATCH /admin/users/:id/status` (deactivate), `PATCH /admin/users/:id/role` (admin-only); `GET /admin/dashboard/stats` (basic: today's orders count, today's revenue, total products, total customers)
+- **Frontend:** `AdminDashboardPage` (4 stat cards + recent orders list), `AdminCustomersPage` (table + detail drawer: order history, addresses, deactivate button), `AdminCategoriesPage` (flat list with create/edit/deactivate — no drag-reorder; sort_order set via numeric input)
+- **Out of scope for v1 (deferred):** admin_audit_log + AuditLogPage, drag-to-reorder categories, low-stock alerts, top-products widget, rich charts
+- **Acceptance:** Admin sees correct counts on dashboard; deactivating a customer prevents their next login; new categories appear in the mega-menu after refresh.
+
+### Phase 6 — Enrichment (Reviews, Promotions, Stores, Help)
+- **ReviewsModule** — customer write (verified-purchase only), staff moderate; rating histogram + paginated list on PDP
+- **PromotionsModule** — banners (homepage hero) + discount codes (validate at checkout); admin CRUD
+- **StoresModule** — **static list only**: `GET /stores` returns seeded ~10 UK stores; `StorefinderPage` renders a filterable/sortable table (no map). Postcode field filters by string prefix match. No Leaflet.
+- **Help** — markdown articles (file-based content in `server/src/help/articles/*.md`), category index, search
+- **Acceptance:** Reviews appear on PDP after moderation; valid promo code reduces basket total; stores page lists all stores sortable by city/postcode.
+
+### Phase 7 — Polish & Production-Readiness
+- Skeleton loaders on every async view; error boundaries; sympathetic 404
+- WCAG AA pass (focus-visible, ARIA labels, alt text everywhere, keyboard traps in modals)
+- Lighthouse: Perf ≥90, A11y ≥95, SEO ≥95 (image lazy-loading, semantic HTML, meta tags per page)
+- Mailhog wired for order confirmation + password reset emails (HTML templates in `server/src/email/templates/`)
+- Image pipeline: Multer + sharp → thumb (300²), medium (600²), large (1200²); served via `/static/uploads/`
+- README at root with quickstart, env table, scripts, architecture diagram link
+- Test suites: client (Vitest+RTL) ≥70% on hooks/utils, server (Jest+Supertest) ≥70% on services + e2e on auth/products/basket/checkout
+- Final merge `develop → main`, tag `v1.0.0`, push to GitHub
+
+---
+
+## Critical Files To Modify
+
+### Skill / docs
+- [WARP.md](WARP.md) — version refresh, reference new skills
+- [Architecture.md](Architecture.md) — Sequelize alignment, mailhog/minio in compose
+- [.warp/skills/frontend.md](.warp/skills/frontend.md) — versions, baseApi unwrap note
+- [.warp/skills/backend.md](.warp/skills/backend.md) — strip TypeORM mention
+- [.warp/skills/admin-panel.md](.warp/skills/admin-panel.md) — NEW
+- [.warp/skills/testing.md](.warp/skills/testing.md) — NEW
+- [.warp/skills/git-workflow.md](.warp/skills/git-workflow.md) — NEW
+- [.warp/skills/qa-acceptance.md](.warp/skills/qa-acceptance.md) — NEW
+- [.warp/skills/api-contracts.md](.warp/skills/api-contracts.md) — NEW
+
+### Infra
+- [docker-compose.yml](docker-compose.yml) — port alignment, add mailhog + minio
+- New: `.husky/`, `commitlint.config.cjs`, `.lintstagedrc.json`
+- `README.md` (new at root)
+
+### Backend (new files per phase)
+- `server/src/database/migrations/*` — full migration set replacing `synchronize: true`
+- `server/src/auth/**`, `users/**`, `products/**`, `basket/**`, `wishlist/**`, `checkout/**`, `orders/**`, `payments/**` (simulated), `reviews/**`, `promotions/**`, `stores/**` (static), `admin/**`, `email/**`, `search/**`
+- `server/uploads/` (gitignored) — Multer image destination
+- `server/src/database/seeders/*` — products, users, stores, promotions
+
+### Frontend (extend existing scaffold)
+- Wire all RTK Query slices in `client/src/services/`
+- Build out each page in `client/src/pages/` (already scaffolded)
+- New: `client/src/admin/**` (AdminLayout, AdminSidebar, DataTable, AdminFormShell, all admin pages)
+- New: `client/src/components/common/*Skeleton.tsx`, `ErrorBoundary.tsx`, `ApiError.tsx`
+
+### Reuse (already in place)
+- `client/src/app/baseApi.ts` already unwraps the envelope — keep
+- `server/src/common/interceptors/response-wrapper.interceptor.ts` — keep
+- `server/src/common/filters/http-exception.filter.ts` — keep
+- `server/src/common/guards/jwt-auth.guard.ts` + `roles.guard.ts` — keep, extend
+- `server/src/categories/**` — keep as-is; use as template for `products` module
+
+---
+
+## Verification (end-to-end)
+
+1. `docker-compose up -d` — all 6 services come up healthy
+2. `cd server && npm run migration:run && npm run seed:run`
+3. `cd client && npm run dev`, `cd server && npm run start:dev`
+4. http://localhost:3000 — homepage shows hero, carousels, featured products, mega-menu opens with seeded categories
+5. Search "tv" → results render; click a product → PDP loads with images + variants; add to trolley → drawer slides; go to basket → checkout → place order → confirmation page
+6. http://localhost:3000/auth/login as `admin@argos.local` → redirects to `/admin` → dashboard shows the order just placed; navigate to Products → add a new product → see it on homepage carousel immediately
+7. `npm run test --workspaces` — all suites green
+8. `npx lighthouse http://localhost:3000 --view` — meets targets
+9. `git log --oneline --graph --all` — clean conventional-commit history, all phases on `develop`, merged to `main`, tagged `v1.0.0`

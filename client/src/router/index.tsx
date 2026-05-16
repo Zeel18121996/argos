@@ -1,6 +1,8 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ReactElement } from 'react'
 import { RootLayout } from '@/components/layout/RootLayout'
+import { ProtectedRoute } from '@/components/Common/ProtectedRoute'
+import { StaffRoute } from '@/components/Common/StaffRoute'
 
 // Lazy-load all pages
 const HomePage = lazy(() => import('@/pages/HomePage'))
@@ -40,11 +42,21 @@ function PageLoader() {
   )
 }
 
-function wrap(Component: React.LazyExoticComponent<() => JSX.Element>) {
+function wrap(Component: React.LazyExoticComponent<() => ReactElement>) {
   return (
     <Suspense fallback={<PageLoader />}>
       <Component />
     </Suspense>
+  )
+}
+
+function protectedWrap(Component: React.LazyExoticComponent<() => ReactElement>) {
+  return (
+    <ProtectedRoute>
+      <Suspense fallback={<PageLoader />}>
+        <Component />
+      </Suspense>
+    </ProtectedRoute>
   )
 }
 
@@ -70,20 +82,58 @@ const router = createBrowserRouter([
         ),
       },
 
-      // ── Auth ────────────────────────────────────────────────────────────
+      // ── Auth (public — also accepts ?successUrl=/path for redirects) ─────
       { path: 'auth/login', element: wrap(LoginPage) },
       { path: 'auth/register', element: wrap(RegisterPage) },
+      {
+        path: 'auth/forgot-password',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ComingSoon page="Forgot password" />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'auth/reset-password',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ComingSoon page="Reset password" />
+          </Suspense>
+        ),
+      },
 
-      // ── Checkout (protected — Phase 6) ──────────────────────────────────
-      { path: 'checkout', element: wrap(CheckoutPage) },
-      { path: 'checkout/confirmation/:orderId', element: wrap(OrderConfirmationPage) },
+      // ── Checkout (protected) ────────────────────────────────────────────
+      { path: 'checkout', element: protectedWrap(CheckoutPage) },
+      { path: 'checkout/confirmation/:orderId', element: protectedWrap(OrderConfirmationPage) },
 
-      // ── Account (protected — Phase 7) ───────────────────────────────────
-      { path: 'account', element: wrap(AccountDashboardPage) },
-      { path: 'account/orders', element: wrap(AccountOrdersPage) },
-      { path: 'account/orders/:id', element: wrap(AccountOrderDetailPage) },
-      { path: 'account/wishlist', element: wrap(WishlistPage) },
-      { path: 'account/profile', element: wrap(ProfilePage) },
+      // ── Account (protected) ─────────────────────────────────────────────
+      { path: 'account', element: protectedWrap(AccountDashboardPage) },
+      { path: 'account/orders', element: protectedWrap(AccountOrdersPage) },
+      { path: 'account/orders/:id', element: protectedWrap(AccountOrderDetailPage) },
+      { path: 'account/wishlist', element: protectedWrap(WishlistPage) },
+      { path: 'account/profile', element: protectedWrap(ProfilePage) },
+
+      // ── Admin (staff/admin only — full panel in Phase 5) ────────────────
+      {
+        path: 'admin',
+        element: (
+          <StaffRoute>
+            <Suspense fallback={<PageLoader />}>
+              <ComingSoon page="Admin dashboard" />
+            </Suspense>
+          </StaffRoute>
+        ),
+      },
+      {
+        path: 'admin/*',
+        element: (
+          <StaffRoute>
+            <Suspense fallback={<PageLoader />}>
+              <ComingSoon page="Admin section" />
+            </Suspense>
+          </StaffRoute>
+        ),
+      },
 
       // ── 404 ─────────────────────────────────────────────────────────────
       { path: '*', element: wrap(NotFoundPage) },

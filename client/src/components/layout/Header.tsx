@@ -1,12 +1,16 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Search, ShoppingCart, User, Menu, X, ChevronDown } from 'lucide-react'
+import { Search, ShoppingCart, User, Menu, X, ChevronDown, LogOut } from 'lucide-react'
+import { toast } from 'sonner'
 import { useGetCategoriesQuery } from '@/services/categoriesApi'
 import { useAppSelector, useAppDispatch } from '@/app/store'
 import { setMegaMenuOpen, setMobileNavOpen } from '@/features/ui/uiSlice'
 import { useScrolled } from '@/hooks/useScrolled'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/utils/cn'
+import { useLogoutMutation } from '@/services/authApi'
+import { clearAuth } from '@/features/auth/authSlice'
+import { baseApi } from '@/app/baseApi'
 import { MegaMenu } from './MegaMenu'
 import { MobileNavDrawer } from './MobileNavDrawer'
 
@@ -118,19 +122,128 @@ function SearchBar() {
 
 // ── Account menu ──────────────────────────────────────────────────────────────
 function AccountButton() {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isStaff } = useAuth()
+  const dispatch = useAppDispatch()
+  const navigate = useNavigate()
+  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation()
+  const [open, setOpen] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const escHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    document.addEventListener('keydown', escHandler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('keydown', escHandler)
+    }
+  }, [open])
+
+  if (!isAuthenticated) {
+    return (
+      <Link
+        to="/auth/login"
+        className="flex flex-col items-center gap-0.5 text-argos-gray-700 hover:text-argos-blue focus-ring rounded px-1 transition-colors"
+        aria-label="Sign in"
+      >
+        <User size={20} strokeWidth={1.5} />
+        <span className="text-2xs leading-none hidden lg:block">Sign in</span>
+      </Link>
+    )
+  }
+
+  const handleLogout = async () => {
+    setOpen(false)
+    try {
+      await logout().unwrap()
+    } catch {
+      // Even if logout fails server-side, clear local state.
+    }
+    dispatch(clearAuth())
+    dispatch(baseApi.util.resetApiState())
+    toast.success('Signed out')
+    navigate('/')
+  }
 
   return (
-    <Link
-      to={isAuthenticated ? '/account' : '/auth/login'}
-      className="flex flex-col items-center gap-0.5 text-argos-gray-700 hover:text-argos-blue focus-ring rounded px-1 transition-colors"
-      aria-label={isAuthenticated ? 'My Account' : 'Sign in'}
-    >
-      <User size={20} strokeWidth={1.5} />
-      <span className="text-2xs leading-none hidden lg:block">
-        {isAuthenticated ? user!.firstName : 'Sign in'}
-      </span>
-    </Link>
+    <div ref={wrapperRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex flex-col items-center gap-0.5 text-argos-gray-700 hover:text-argos-blue focus-ring rounded px-1 transition-colors"
+      >
+        <User size={20} strokeWidth={1.5} />
+        <span className="text-2xs leading-none hidden lg:block">{user!.firstName}</span>
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full mt-1 w-56 bg-white border border-argos-gray-200 rounded shadow-lg z-40 py-1 animate-fade-in"
+        >
+          <div className="px-3 py-2 border-b border-argos-gray-200">
+            <p className="text-sm font-bold text-argos-charcoal truncate">
+              {user!.firstName} {user!.lastName}
+            </p>
+            <p className="text-xs text-argos-gray truncate">{user!.email}</p>
+          </div>
+          <Link
+            to="/account"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2 text-sm text-argos-charcoal hover:bg-argos-gray-bg"
+          >
+            My account
+          </Link>
+          <Link
+            to="/account/orders"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2 text-sm text-argos-charcoal hover:bg-argos-gray-bg"
+          >
+            My orders
+          </Link>
+          <Link
+            to="/account/wishlist"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2 text-sm text-argos-charcoal hover:bg-argos-gray-bg"
+          >
+            Wishlist
+          </Link>
+          {isStaff && (
+            <Link
+              to="/admin"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="block px-3 py-2 text-sm font-semibold text-argos-blue hover:bg-argos-blue-light"
+            >
+              Admin panel
+            </Link>
+          )}
+          <div className="border-t border-argos-gray-200 mt-1 pt-1">
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-argos-charcoal hover:bg-argos-gray-bg disabled:opacity-60"
+            >
+              <LogOut size={14} />
+              {isLoggingOut ? 'Signing out…' : 'Sign out'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

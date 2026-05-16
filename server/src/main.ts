@@ -12,13 +12,21 @@ async function bootstrap() {
   const config = app.get(ConfigService)
   const clientUrl = config.get<string>('CLIENT_URL', 'http://localhost:3000')
   const port = config.get<number>('PORT', 4000)
+  const isDev = config.get<string>('NODE_ENV') === 'development'
 
   // Global prefix — all routes start with /api/v1
   app.setGlobalPrefix('api/v1')
 
-  // CORS — only allow our client origin, with credentials (for cookies)
+  // CORS — only allow our client origin, with credentials (for cookies).
+  // In dev, also accept any localhost port so Vite can fall back to 3001/3002 when 3000 is busy.
+  const allowedOrigins = [clientUrl]
   app.enableCors({
-    origin: clientUrl,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true) // same-origin / curl / server-to-server
+      if (allowedOrigins.includes(origin)) return callback(null, true)
+      if (isDev && /^http:\/\/localhost:\d+$/.test(origin)) return callback(null, true)
+      return callback(new Error(`Origin ${origin} not allowed by CORS`))
+    },
     credentials: true,
   })
 

@@ -3,6 +3,9 @@ import { InjectModel } from '@nestjs/sequelize'
 import { Op } from 'sequelize'
 import { UserModel } from '../users/models/user.model'
 import { RefreshTokenModel } from '../auth/models/refresh-token.model'
+import { OrderModel } from '../orders/models/order.model'
+import { ProductModel } from '../products/models/product.model'
+import { CategoryModel } from '../categories/models/category.model'
 import { QueryUsersDto, UserStatusFilter } from './dto/query-users.dto'
 import { UpdateUserRoleDto } from './dto/update-user-role.dto'
 import { UpdateUserStatusDto } from './dto/update-user-status.dto'
@@ -14,6 +17,9 @@ export class AdminService {
   constructor(
     @InjectModel(UserModel) private readonly userModel: typeof UserModel,
     @InjectModel(RefreshTokenModel) private readonly refreshTokenModel: typeof RefreshTokenModel,
+    @InjectModel(OrderModel) private readonly orderModel: typeof OrderModel,
+    @InjectModel(ProductModel) private readonly productModel: typeof ProductModel,
+    @InjectModel(CategoryModel) private readonly categoryModel: typeof CategoryModel,
   ) {}
 
   async listUsers(query: QueryUsersDto) {
@@ -82,6 +88,53 @@ export class AdminService {
       )
     }
     return this.toAdminSummary(user)
+  }
+
+  async listCategories() {
+    const all = await this.categoryModel.findAll({
+      order: [
+        ['sort_order', 'ASC'],
+        ['name', 'ASC'],
+      ],
+      raw: true,
+    })
+    return { data: all }
+  }
+
+  async getDashboardStats() {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const todayOrders = await this.orderModel.count({
+      where: { createdAt: { [Op.gte]: todayStart } },
+    })
+
+    const todayRevenue =
+      (await this.orderModel.sum('total', {
+        where: { createdAt: { [Op.gte]: todayStart }, status: { [Op.ne]: 'cancelled' } },
+      })) ?? 0
+
+    const totalProducts = await this.productModel.count({ where: { isActive: true } })
+    const totalCustomers = await this.userModel.count({ where: { role: 'customer' } })
+
+    const recentOrders = await this.orderModel.findAll({
+      order: [['created_at', 'DESC']],
+      limit: 10,
+    })
+
+    return {
+      todayOrders,
+      todayRevenue: Number(todayRevenue),
+      totalProducts,
+      totalCustomers,
+      recentOrders: recentOrders.map((o) => ({
+        id: o.id,
+        orderNumber: o.orderNumber,
+        status: o.status,
+        total: o.total,
+        createdAt: o.createdAt,
+      })),
+    }
   }
 
   private toAdminSummary(user: UserModel) {

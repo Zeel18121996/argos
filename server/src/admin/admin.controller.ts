@@ -17,12 +17,18 @@ import { RolesGuard } from '../common/guards/roles.guard'
 import { Roles } from '../common/decorators/roles.decorator'
 import { CurrentUser } from '../common/decorators/current-user.decorator'
 import type { JwtUser } from '../auth/types/jwt-user.type'
+import { Public } from '../common/decorators/public.decorator'
 
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('staff')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
+
+  @Get('dashboard/stats')
+  getDashboardStats() {
+    return this.adminService.getDashboardStats()
+  }
 
   // Staff or above can list/view users
   @Get('users')
@@ -54,5 +60,10 @@ export class AdminController {
     @CurrentUser() actor: JwtUser,
   ) {
     return this.adminService.updateStatus(id, dto, actor)
+  }
+
+  @Get('categories')
+  listCategories() {
+    return this.adminService.listCategories()
   }
 }

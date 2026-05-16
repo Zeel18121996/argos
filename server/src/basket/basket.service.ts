@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
 import { Op, Transaction } from 'sequelize'
 import { BasketModel } from './models/basket.model'
 import { BasketItemModel } from './models/basket-item.model'
 import { ProductModel } from '../products/models/product.model'
 import { ProductImageModel } from '../products/models/product-image.model'
+import { ProductVariantModel } from '../products/models/product-variant.model'
 
 export interface BasketItemResponse {
   id: string
@@ -44,6 +45,8 @@ export class BasketService {
     private readonly itemModel: typeof BasketItemModel,
     @InjectModel(ProductModel)
     private readonly productModel: typeof ProductModel,
+    @InjectModel(ProductVariantModel)
+    private readonly variantModel: typeof ProductVariantModel,
   ) {}
 
   /** Get or create a guest basket keyed by sessionId. */
@@ -110,7 +113,7 @@ export class BasketService {
     return basket
   }
 
-  /** Add item to basket. If item exists, increment quantity. */
+  /** Add item to basket. If item exists, increment quantity. Validates stock. */
   async addItem(
     basketId: string,
     productId: string,
@@ -119,10 +122,27 @@ export class BasketService {
   ): Promise<BasketItemModel> {
     const product = await this.productModel.findByPk(productId)
     if (!product) throw new NotFoundException('Product not found')
+    if (!product.isActive) throw new BadRequestException('Product is not available')
+
+    let maxStock = product.stockCount
+    if (variantId) {
+      const variant = await this.variantModel.findOne({
+        where: { id: variantId, productId, isActive: true },
+      })
+      if (!variant) throw new NotFoundException('Variant not found')
+      maxStock = Math.min(product.stockCount, variant.stockCount)
+    }
 
     const existing = await this.itemModel.findOne({
       where: { basketId, productId, variantId: variantId ?? { [Op.is]: null } },
     })
+
+    const requestedQty = (existing?.quantity ?? 0) + quantity
+    if (requestedQty > maxStock) {
+      throw new BadRequestException(
+        `Only ${maxStock} item(s) available. You already have ${existing?.quantity ?? 0} in your basket.`,
+      )
+    }
 
     if (existing) {
       existing.quantity += quantity
@@ -139,11 +159,33 @@ export class BasketService {
     } as any)
   }
 
-  /** Update item quantity. */
+  /** Update item quantity. Validates stock. */
   async updateItem(itemId: string, quantity: number): Promise<BasketItemModel> {
     const item = await this.itemModel.findByPk(itemId)
     if (!item) throw new NotFoundException('Basket item not found')
-    item.quantity = Math.max(1, quantity)
+
+    const product = await this.productModel.findByPk(item.productId)
+    if (!product) throw new NotFoundException('Product not found')
+
+    let maxStock = product.stockCount
+    if (item.variantId) {
+      const variant = await this.variantModel.findOne({
+        where: { id: item.variantId, productId: item.productId, isActive: true },
+      })
+      if (variant) maxStock = Math.min(product.stockCount, variant.stockCount)
+    }
+
+    const newQty = Math.max(0, quantity)
+    if (newQty > maxStock) {
+      throw new BadRequestException(`Only ${maxStock} item(s) available. You requested ${newQty}.`)
+    }
+
+    if (newQty === 0) {
+      await item.destroy()
+      return item
+    }
+
+    item.quantity = newQty
     await item.save()
     return item
   }

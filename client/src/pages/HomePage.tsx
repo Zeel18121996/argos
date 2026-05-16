@@ -5,22 +5,16 @@ import { Autoplay, Pagination, Navigation } from 'swiper/modules'
 import 'swiper/css'
 import 'swiper/css/pagination'
 import 'swiper/css/navigation'
-import {
-  ChevronRight,
-  Truck,
-  RotateCcw,
-  ShieldCheck,
-  Store,
-  MapPin,
-  Heart,
-  ShoppingCart,
-  Star,
-} from 'lucide-react'
+import { ChevronRight, Truck, RotateCcw, ShieldCheck, Store, MapPin } from 'lucide-react'
 import { useGetCategoriesQuery } from '@/services/categoriesApi'
+import {
+  useGetSaleProductsQuery,
+  useGetNewProductsQuery,
+  useGetFeaturedProductsQuery,
+} from '@/services/productsApi'
+import ProductCard from '@/components/Common/ProductCard/ProductCard'
 import { cn } from '@/utils/cn'
-import { formatPrice } from '@/utils/formatPrice'
-
-// ── Mock data (replace with real API calls in Phase 3) ────────────────────────
+import { resolveImageUrl } from '@/utils/imageUrl'
 
 const HERO_SLIDES = [
   {
@@ -89,7 +83,7 @@ const TRENDING_CARDS = [
     image: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=80',
     title: 'A-mazing deals',
     subtitle: 'All the best deals in one place. See it. Love it. Get it.',
-    link: '/search/deals',
+    link: '/search?q=deals',
   },
   {
     id: 2,
@@ -114,114 +108,6 @@ const TRENDING_CARDS = [
   },
 ]
 
-interface MockProduct {
-  id: string
-  name: string
-  images: string[]
-  price: number // in pence
-  wasPrice?: number // in pence
-  rating: number
-  reviewCount: number
-  inStock: boolean
-  isNew?: boolean
-  isSale?: boolean
-  slug: string
-}
-
-const MOCK_PRODUCTS: MockProduct[] = [
-  {
-    id: 'p1',
-    name: 'Samsung 55" QLED 4K Smart TV',
-    slug: 'samsung-55-qled',
-    images: ['https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=600&q=80'],
-    price: 59999,
-    wasPrice: 79999,
-    rating: 4.5,
-    reviewCount: 1243,
-    inStock: true,
-    isSale: true,
-  },
-  {
-    id: 'p2',
-    name: 'Apple AirPods Pro (2nd Gen)',
-    slug: 'airpods-pro-2',
-    images: ['https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=600&q=80'],
-    price: 22900,
-    rating: 4.8,
-    reviewCount: 5621,
-    inStock: true,
-    isNew: true,
-  },
-  {
-    id: 'p3',
-    name: 'LEGO Technic Ferrari Daytona SP3',
-    slug: 'lego-ferrari',
-    images: ['https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=600&q=80'],
-    price: 34999,
-    wasPrice: 39999,
-    rating: 4.9,
-    reviewCount: 892,
-    inStock: true,
-    isSale: true,
-  },
-  {
-    id: 'p4',
-    name: 'Dyson V15 Detect Absolute Cordless Vacuum',
-    slug: 'dyson-v15',
-    images: ['https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80'],
-    price: 54999,
-    wasPrice: 64999,
-    rating: 4.7,
-    reviewCount: 3210,
-    inStock: true,
-    isSale: true,
-  },
-  {
-    id: 'p5',
-    name: 'PlayStation 5 Console (Disc Edition)',
-    slug: 'ps5',
-    images: ['https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=600&q=80'],
-    price: 44999,
-    rating: 4.8,
-    reviewCount: 12450,
-    inStock: false,
-  },
-  {
-    id: 'p6',
-    name: 'Ninja Foodi MAX 9-in-1 Multi-Cooker',
-    slug: 'ninja-foodi',
-    images: ['https://images.unsplash.com/photo-1585515320310-259814833e62?w=600&q=80'],
-    price: 17999,
-    wasPrice: 24999,
-    rating: 4.6,
-    reviewCount: 4560,
-    inStock: true,
-    isSale: true,
-  },
-  {
-    id: 'p7',
-    name: 'Apple iPhone 15 Pro 256GB',
-    slug: 'iphone-15-pro',
-    images: ['https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=600&q=80'],
-    price: 99900,
-    rating: 4.7,
-    reviewCount: 8930,
-    inStock: true,
-  },
-  {
-    id: 'p8',
-    name: 'Fitbit Charge 6 Fitness Tracker',
-    slug: 'fitbit-charge-6',
-    images: ['https://images.unsplash.com/photo-1575311373937-040b8e1fd5b6?w=600&q=80'],
-    price: 12999,
-    wasPrice: 15999,
-    rating: 4.4,
-    reviewCount: 2340,
-    inStock: true,
-    isSale: true,
-  },
-]
-
 const SERVICES = [
   {
     icon: Truck,
@@ -240,8 +126,6 @@ const SERVICES = [
     subtitle: 'Shop with confidence with safe checkout.',
   },
 ]
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function SectionHeader({
   title,
@@ -304,135 +188,16 @@ function EditorialCard({
   )
 }
 
-function ProductCard({ product }: { product: MockProduct }) {
-  const discount = product.wasPrice
-    ? Math.round(((product.wasPrice - product.price) / product.wasPrice) * 100)
-    : null
-
-  return (
-    <Link
-      to={`/product/${product.slug}`}
-      className="group bg-white border border-argos-border hover:shadow-md transition-shadow duration-200 flex flex-col relative"
-    >
-      {/* Badges */}
-      <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
-        {product.isSale && discount && (
-          <span className="inline-block text-[14px] leading-[20px] font-medium px-2 py-0.5 rounded-sm bg-argos-green text-white">
-            Save {discount}%
-          </span>
-        )}
-        {product.isNew && (
-          <span className="inline-block text-[14px] leading-[20px] font-medium px-2 py-0.5 rounded-sm bg-argos-blue text-white">
-            New
-          </span>
-        )}
-        {!product.inStock && (
-          <span className="inline-block text-[14px] leading-[20px] font-medium px-2 py-0.5 rounded-sm bg-argos-gray-500 text-white">
-            Out of stock
-          </span>
-        )}
-      </div>
-
-      {/* Wishlist */}
-      <button
-        onClick={(e) => e.preventDefault()}
-        className="absolute top-2 right-2 z-10 p-1.5 rounded-full bg-white shadow-sm text-argos-gray-500 hover:text-argos-green transition-colors"
-        aria-label="Add to wishlist"
-      >
-        <Heart size={15} />
-      </button>
-
-      {/* Image */}
-      <div className="relative overflow-hidden bg-argos-gray-50 aspect-square">
-        <img
-          src={product.images[0]}
-          alt={product.name}
-          className="w-full h-full object-contain p-3 group-hover:scale-105 transition-transform duration-300"
-          loading="lazy"
-        />
-      </div>
-
-      {/* Content */}
-      <div className="flex flex-col flex-1 p-3">
-        <h3 className="text-[16px] leading-[24px] text-argos-dark font-bold line-clamp-2 mb-1.5 flex-1">
-          {product.name}
-        </h3>
-
-        {/* Rating */}
-        <div className="flex items-center gap-1 mb-2">
-          <div className="flex items-center">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                size={12}
-                className={cn(
-                  i < Math.floor(product.rating)
-                    ? 'text-argos-amber fill-argos-amber'
-                    : 'text-argos-gray-300 fill-argos-gray-300',
-                )}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-argos-blue hover:underline cursor-pointer">
-            (
-            {product.reviewCount > 1000
-              ? `${(product.reviewCount / 1000).toFixed(1)}k`
-              : product.reviewCount}
-            )
-          </span>
-        </div>
-
-        {/* Price */}
-        <div className="mb-1.5">
-          {product.isSale && product.wasPrice && (
-            <div className="text-[14px] font-medium text-argos-gray-500 capitalize mb-0.5">
-              Less than half price
-            </div>
-          )}
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <span className="text-[16px] leading-[24px] font-bold text-argos-dark">
-              {formatPrice(product.price)}
-            </span>
-            {product.wasPrice && (
-              <span className="text-[14px] text-argos-gray-500">
-                Was <span className="line-through">{formatPrice(product.wasPrice)}</span>
-              </span>
-            )}
-          </div>
-        </div>
-
-        {product.inStock && (
-          <p className="text-[14px] text-argos-green mb-2 font-normal">Free delivery available</p>
-        )}
-
-        {/* CTA */}
-        <button
-          onClick={(e) => e.preventDefault()}
-          disabled={!product.inStock}
-          className={cn(
-            'w-full flex items-center justify-center gap-2 py-2.5 text-[18px] leading-[27px] font-semibold rounded-sm transition-colors mt-auto',
-            product.inStock
-              ? 'bg-argos-green text-white hover:bg-argos-green-dark'
-              : 'bg-argos-gray-300 text-argos-gray-500 cursor-not-allowed',
-          )}
-        >
-          <ShoppingCart size={16} />
-          {!product.inStock ? 'Out of stock' : 'Add to trolley'}
-        </button>
-      </div>
-    </Link>
-  )
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 export default function HomePage() {
   const { data: categories = [] } = useGetCategoriesQuery()
+  const { data: saleProducts = [], isLoading: saleLoading } = useGetSaleProductsQuery()
+  const { data: newProducts = [], isLoading: newLoading } = useGetNewProductsQuery()
+  const { data: featuredProducts = [], isLoading: featuredLoading } = useGetFeaturedProductsQuery()
   const storeInputRef = useRef<HTMLInputElement>(null)
 
   return (
     <div className="bg-white">
-      {/* 1. Hero Carousel */}
+      {/* Hero Carousel */}
       <Swiper
         modules={[Autoplay, Pagination, Navigation]}
         autoplay={{ delay: 5000, disableOnInteraction: false }}
@@ -468,7 +233,7 @@ export default function HomePage() {
         ))}
       </Swiper>
 
-      {/* 2. Category icon scroll */}
+      {/* Category icon scroll */}
       <div className="border-b border-argos-border bg-white">
         <div className="page-container py-4">
           <div className="cat-scroll">
@@ -482,7 +247,7 @@ export default function HomePage() {
                 <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-argos-border group-hover:border-argos-green transition-colors bg-argos-gray-50">
                   {cat.imageUrl ? (
                     <img
-                      src={cat.imageUrl}
+                      src={resolveImageUrl(cat.imageUrl)}
                       alt={cat.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       loading="lazy"
@@ -505,9 +270,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 3. Seasonal inspiration */}
+      {/* Seasonal inspiration */}
       <div className="page-container pt-8 mb-4">
-        <SectionHeader title="Seasonal inspiration" seeAllLink="/search/seasonal" />
+        <SectionHeader title="Seasonal inspiration" seeAllLink="/search?q=seasonal" />
         <Swiper
           modules={[Navigation]}
           navigation
@@ -527,7 +292,7 @@ export default function HomePage() {
         </Swiper>
       </div>
 
-      {/* 4. Slim promo banner */}
+      {/* Promo banner */}
       <div className="page-container mb-6">
         <div className="rounded-sm overflow-hidden">
           <img
@@ -538,11 +303,11 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 5. Popular products */}
+      {/* Sale products */}
       <div className="page-container mb-8">
         <SectionHeader
           title="Popular products on Argos"
-          seeAllLink="/search/sale"
+          seeAllLink="/search?q=deals"
           seeAllLabel="See all deals"
         />
         <Swiper
@@ -557,17 +322,21 @@ export default function HomePage() {
             1280: { slidesPerView: 6 },
           }}
         >
-          {MOCK_PRODUCTS.filter((p) => p.isSale).map((product) => (
-            <SwiperSlide key={product.id}>
-              <ProductCard product={product} />
-            </SwiperSlide>
-          ))}
+          {saleLoading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-gray-200 aspect-square rounded animate-pulse" />
+              ))
+            : saleProducts.map((product) => (
+                <SwiperSlide key={product.id}>
+                  <ProductCard product={product} />
+                </SwiperSlide>
+              ))}
         </Swiper>
       </div>
 
-      {/* 6. Trending now */}
+      {/* Trending now */}
       <div className="page-container mb-8">
-        <SectionHeader title="Trending now" seeAllLink="/search/trending" />
+        <SectionHeader title="Trending now" seeAllLink="/search?q=trending" />
         <Swiper
           modules={[Navigation]}
           navigation
@@ -587,9 +356,9 @@ export default function HomePage() {
         </Swiper>
       </div>
 
-      {/* 7. New arrivals */}
+      {/* New arrivals */}
       <div className="page-container mb-8">
-        <SectionHeader title="New in" seeAllLink="/search/new" />
+        <SectionHeader title="New in" seeAllLink="/search?q=new" />
         <Swiper
           modules={[Navigation]}
           navigation
@@ -602,25 +371,33 @@ export default function HomePage() {
             1280: { slidesPerView: 6 },
           }}
         >
-          {MOCK_PRODUCTS.filter((p) => p.isNew).map((product) => (
-            <SwiperSlide key={product.id}>
-              <ProductCard product={product} />
-            </SwiperSlide>
-          ))}
+          {newLoading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-gray-200 aspect-square rounded animate-pulse" />
+              ))
+            : newProducts.map((product) => (
+                <SwiperSlide key={product.id}>
+                  <ProductCard product={product} />
+                </SwiperSlide>
+              ))}
         </Swiper>
       </div>
 
-      {/* 8. Just for you grid */}
+      {/* Just for you grid */}
       <div className="page-container mb-10">
-        <SectionHeader title="Just for you" seeAllLink="/search/featured" />
+        <SectionHeader title="Just for you" seeAllLink="/search?q=featured" />
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-          {MOCK_PRODUCTS.slice(0, 6).map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {featuredLoading
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-gray-200 aspect-square rounded animate-pulse" />
+              ))
+            : featuredProducts
+                .slice(0, 6)
+                .map((product) => <ProductCard key={product.id} product={product} />)}
         </div>
       </div>
 
-      {/* 9. Services 4-tile row */}
+      {/* Services */}
       <div className="bg-argos-gray-50 border-t border-argos-border">
         <div className="page-container py-8">
           <SectionHeader title="There's even more to Argos" />
@@ -643,7 +420,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 10. Store finder widget */}
+      {/* Store finder */}
       <div className="bg-white border-t border-argos-border">
         <div className="page-container py-8">
           <div className="flex flex-col md:flex-row md:items-center gap-4">

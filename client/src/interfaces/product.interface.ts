@@ -1,28 +1,49 @@
 export interface Product {
   id: string
+  slug: string
   sku: string
   name: string
-  slug: string
+  brand: string | null
   categoryId: string
   categorySlug: string
   categoryName: string
   images: string[]
   price: number
-  wasPrice?: number
-  rating: number
+  compareAtPrice: number | null
+  ratingAverage: number
   reviewCount: number
+  stockCount: number
   inStock: boolean
-  stockCount?: number
-  isNew?: boolean
-  isSale?: boolean
-  isClearance?: boolean
-  brand?: string
-  description: string
+  isNew: boolean
+  isOnOffer: boolean
+  isClearance: boolean
+  isFeatured: boolean
+  description: string | null
   features: string[]
   specifications: ProductSpec[]
   deliveryOptions: DeliveryOption[]
   reserveAvailable: boolean
-  averageDeliveryDays?: number
+  variants?: ProductVariant[]
+  imagesFull?: ProductImage[]
+  isActive?: boolean
+}
+
+export interface ProductVariant {
+  id: string
+  sku: string
+  name: string
+  attributes: Record<string, string>
+  priceOverride: number | null
+  stockCount: number
+  isActive: boolean
+}
+
+export interface ProductImage {
+  id: string
+  url: string
+  altText: string | null
+  sortOrder: number
+  sizeLabel: string | null
 }
 
 export interface ProductSpec {
@@ -58,6 +79,10 @@ export interface ProductListParams {
   maxPrice?: number
   brand?: string
   inStock?: boolean
+  onOffer?: boolean
+  isNew?: boolean
+  isFeatured?: boolean
+  isClearance?: boolean
 }
 
 export interface ProductListResponse {

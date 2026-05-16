@@ -6,9 +6,12 @@ require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') })
  * Sequelize CLI configuration.
  * Used by: sequelize-cli db:migrate, db:seed, etc.
  */
+const dbUrl = process.env.DATABASE_URL ||
+  `postgres://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`
+
 module.exports = {
   development: {
-    url: process.env.DATABASE_URL,
+    url: dbUrl,
     dialect: 'postgres',
     dialectOptions: {
       ssl: false,
@@ -18,12 +21,12 @@ module.exports = {
     seederStorageTableName: 'sequelize_seeds',
   },
   test: {
-    url: process.env.DATABASE_URL,
+    url: dbUrl,
     dialect: 'postgres',
     migrationStorageTableName: 'sequelize_migrations',
   },
   production: {
-    url: process.env.DATABASE_URL,
+    url: dbUrl,
     dialect: 'postgres',
     dialectOptions: {
       ssl: { rejectUnauthorized: false },

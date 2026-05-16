@@ -3,16 +3,19 @@ import { useDispatch, useSelector } from 'react-redux'
 import { baseApi } from './baseApi'
 import authReducer from '@/features/auth/authSlice'
 import uiReducer from '@/features/ui/uiSlice'
-import basketReducer from '@/features/basket/basketSlice'
+import cartReducer from '@/store/slices/cartSlice'
+import wishlistReducer from '@/store/slices/wishlistSlice'
 
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
     auth: authReducer,
     ui: uiReducer,
-    basket: basketReducer,
+    cart: cartReducer,
+    wishlist: wishlistReducer,
   },
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(baseApi.middleware),
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({ serializableCheck: false }).concat(baseApi.middleware),
 })
 
 export type RootState = ReturnType<typeof store.getState>

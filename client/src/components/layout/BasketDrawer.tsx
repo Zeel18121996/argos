@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { X, Plus, Minus, ShoppingCart, Trash2 } from 'lucide-react'
 import { cn } from '@/utils/cn'
@@ -19,16 +20,31 @@ export function BasketDrawer({ isOpen, onClose }: BasketDrawerProps) {
   const total = basket?.summary.total ?? 0
   const itemCount = basket?.summary.itemCount ?? 0
 
+  // Lock the page beneath the drawer + close on Escape.
+  useEffect(() => {
+    if (!isOpen) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [isOpen, onClose])
+
   if (!isOpen) return null
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/40 z-50" aria-hidden="true" onClick={onClose} />
+      {/* Backdrop — above the sticky header (header z-index is 61). */}
+      <div className="fixed inset-0 bg-black/40 z-[100]" aria-hidden="true" onClick={onClose} />
 
-      {/* Drawer panel */}
+      {/* Drawer panel — sits above the backdrop and the header. */}
       <div
-        className="fixed inset-y-0 right-0 w-[90vw] max-w-[420px] bg-white z-60 flex flex-col shadow-xl animate-slide-in-right"
+        className="fixed inset-y-0 right-0 w-[90vw] max-w-[420px] bg-white z-[110] flex flex-col shadow-xl animate-slide-in-right"
         role="dialog"
         aria-modal="true"
         aria-label="Shopping basket"

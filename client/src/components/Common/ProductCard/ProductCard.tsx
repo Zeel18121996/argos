@@ -51,7 +51,7 @@ const ProductCard: React.FC<Props> = ({ product, className }) => {
     <Link
       to={buildPath.product(product.slug)}
       className={cn(
-        'group bg-white border border-argos-border hover:shadow-md transition-shadow duration-200 flex flex-col relative',
+        'group bg-white border border-argos-gray-200 hover:shadow-md transition-shadow duration-200 flex flex-col relative rounded-sm',
         className,
       )}
     >
@@ -127,16 +127,14 @@ const ProductCard: React.FC<Props> = ({ product, className }) => {
           onClick={handleAddToBasket}
           disabled={!product.inStock}
           className={cn(
-            'w-full flex items-center justify-center gap-2 py-2.5 text-[18px] leading-[27px] font-semibold rounded-sm transition-colors mt-auto',
+            'w-full flex items-center justify-center gap-2 py-2.5 text-base font-semibold rounded-sm transition-colors mt-auto',
             product.inStock
-              ? inCart
-                ? 'bg-argos-green text-white hover:bg-argos-green-dark'
-                : 'bg-argos-green text-white hover:bg-argos-green-dark'
-              : 'bg-argos-gray-light text-argos-gray cursor-not-allowed',
+              ? 'bg-argos-green text-white hover:bg-argos-green-dark'
+              : 'bg-argos-gray-200 text-argos-gray-500 cursor-not-allowed',
           )}
         >
           <ShoppingCart size={16} />
-          {!product.inStock ? 'Out of stock' : inCart ? 'In trolley' : 'Add to trolley'}
+          {!product.inStock ? 'Out of stock' : 'Add to trolley'}
         </button>
       </div>
     </Link>

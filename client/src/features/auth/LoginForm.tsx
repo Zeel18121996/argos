@@ -6,7 +6,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import InputField from '@/components/Form/InputField'
 import PasswordField from '@/components/Form/PasswordField'
-import Button from '@/components/Common/Button/Button'
 import { useLoginMutation } from '@/services/authApi'
 import { useMergeBasketMutation } from '@/services/basketApi'
 import { setAuth, setAuthError } from '@/features/auth/authSlice'
@@ -26,6 +25,12 @@ const schema = yup.object({
   password: yup.string().required('Please enter your password').max(128),
 })
 
+/**
+ * Argos sign-in form. Matches the live argos.co.uk/login layout:
+ *  - Email / Password fields with bold labels above
+ *  - "Forgotten your password?" link directly under the password field, left-aligned, blue underlined
+ *  - Green full-width "Sign in securely" submit button
+ */
 export function LoginForm() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
@@ -50,11 +55,11 @@ export function LoginForm() {
       dispatch(setAuth({ user: result.user, accessToken: result.accessToken }))
       toast.success(`Welcome back, ${result.user.firstName}`)
 
-      // Merge guest basket into user basket
+      // Merge guest basket into user basket (best-effort)
       try {
         await mergeBasket({}).unwrap()
       } catch {
-        // ignore merge errors
+        /* ignore merge errors */
       }
 
       // Role-based redirect: staff/admin → /admin, customers honour successUrl, default /
@@ -74,7 +79,7 @@ export function LoginForm() {
   })
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
       {serverError && (
         <div
           role="alert"
@@ -87,32 +92,33 @@ export function LoginForm() {
       <InputField
         label="Email address"
         type="email"
-        placeholder="you@example.com"
+        autoComplete="email"
         registration={register('email')}
         error={errors.email}
-        required
       />
 
-      <PasswordField
-        label="Password"
-        autoComplete="current-password"
-        registration={register('password')}
-        error={errors.password}
-        required
-      />
-
-      <div className="flex justify-end">
+      <div className="space-y-2">
+        <PasswordField
+          label="Password"
+          autoComplete="current-password"
+          registration={register('password')}
+          error={errors.password}
+        />
         <Link
           to="/auth/forgot-password"
-          className="text-sm font-semibold text-argos-blue hover:underline focus-ring rounded"
+          className="inline-block text-sm font-semibold text-argos-blue underline hover:no-underline focus-ring rounded"
         >
           Forgotten your password?
         </Link>
       </div>
 
-      <Button type="submit" variant="primary" size="full" loading={isLoading}>
-        Sign in
-      </Button>
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full h-12 rounded bg-argos-green hover:bg-argos-green-dark active:bg-argos-green-dark text-white text-base font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-argos-green focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {isLoading ? 'Signing in…' : 'Sign in securely'}
+      </button>
     </form>
   )
 }

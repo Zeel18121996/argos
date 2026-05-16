@@ -16,7 +16,7 @@ const PAYMENT_METHODS = [
 function PaymentBadge({ label }: { label: string }) {
   return (
     <div
-      className="inline-flex items-center justify-center h-8 px-2 bg-white rounded border border-argos-gray-600 text-2xs font-semibold text-argos-gray-700 whitespace-nowrap"
+      className="inline-flex items-center justify-center h-7 px-2 bg-white rounded-sm border border-gray-600 text-2xs font-semibold text-gray-800 whitespace-nowrap"
       aria-label={`${label} accepted`}
     >
       {label}
@@ -46,9 +46,9 @@ function SocialLinks() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label={label}
-          className="text-argos-gray-400 hover:text-white transition-colors"
+          className="text-white/70 hover:text-white transition-colors"
         >
-          <Icon size={22} />
+          <Icon size={24} />
         </a>
       ))}
     </div>
@@ -83,19 +83,19 @@ function AppBadges() {
   )
 }
 
-// ── Section 1: Dark top ───────────────────────────────────────────────────────
+// ── Section 1: Dark top — matching argos.co.uk ──────────────────────────────
 function FooterTopSection() {
   return (
-    <div className="bg-argos-gray-700 text-white">
-      <div className="page-container py-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div className="bg-[#1a1a1a] text-white">
+      <div className="page-container py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {/* Returns */}
         <div>
-          <p className="text-sm font-bold mb-2">Returning an item</p>
-          <p className="text-xs text-argos-gray-400 leading-relaxed">
+          <p className="text-sm font-bold mb-3 text-white">Returning an item</p>
+          <p className="text-xs text-white/70 leading-relaxed">
             For returns, product support and repairs.{' '}
             <Link
               to="/help/returns-and-refunds"
-              className="underline text-argos-gray-300 hover:text-white"
+              className="underline text-white/90 hover:text-white"
             >
               Learn more
             </Link>
@@ -104,7 +104,7 @@ function FooterTopSection() {
 
         {/* Payment methods */}
         <div>
-          <p className="text-sm font-bold mb-2">Payment methods</p>
+          <p className="text-sm font-bold mb-3 text-white">Payment methods</p>
           <div className="flex flex-wrap gap-1.5">
             {PAYMENT_METHODS.map((m) => (
               <PaymentBadge key={m} label={m} />
@@ -114,13 +114,13 @@ function FooterTopSection() {
 
         {/* Social */}
         <div>
-          <p className="text-sm font-bold mb-2">Follow us</p>
+          <p className="text-sm font-bold mb-3 text-white">Follow us</p>
           <SocialLinks />
         </div>
 
         {/* App download */}
         <div>
-          <p className="text-sm font-bold mb-2">Download our app</p>
+          <p className="text-sm font-bold mb-3 text-white">Download our app</p>
           <AppBadges />
         </div>
       </div>
@@ -139,23 +139,23 @@ function FooterBrandsBar() {
   ]
 
   return (
-    <div className="bg-argos-gray-100 border-y border-argos-gray-200">
+    <div className="bg-[#1a1a1a] border-t border-white/10">
       <div className="page-container py-3 flex flex-wrap items-center gap-1">
         {brands.map((b, i, arr) => (
           <span key={b.label} className="flex items-center gap-1">
             {b.current ? (
-              <span className="text-sm text-argos-gray-500 font-medium">{b.label}</span>
+              <span className="text-sm text-white/50 font-medium">{b.label}</span>
             ) : (
               <a
                 href={b.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-argos-gray-600 hover:text-argos-blue hover:underline"
+                className="text-sm text-white/60 hover:text-white hover:underline transition-colors"
               >
                 {b.label}
               </a>
             )}
-            {i < arr.length - 1 && <span className="text-argos-gray-300 select-none mx-1">|</span>}
+            {i < arr.length - 1 && <span className="text-white/20 select-none mx-1">|</span>}
           </span>
         ))}
       </div>
@@ -168,8 +168,8 @@ function FooterLegalBar() {
   const year = new Date().getFullYear()
 
   return (
-    <div className="bg-argos-gray-100">
-      <div className="page-container py-4 space-y-3">
+    <div className="bg-[#1a1a1a] border-t border-white/10">
+      <div className="page-container py-5 space-y-3">
         {/* Legal links */}
         <div className="flex flex-wrap gap-x-4 gap-y-1">
           {[
@@ -188,7 +188,7 @@ function FooterLegalBar() {
             <a
               key={item.href}
               href={item.href}
-              className="text-2xs text-argos-gray-600 hover:underline"
+              className="text-2xs text-white/50 hover:text-white hover:underline transition-colors"
             >
               {item.label}
             </a>
@@ -196,24 +196,27 @@ function FooterLegalBar() {
         </div>
 
         {/* Copyright */}
-        <p className="text-2xs text-argos-gray-500">© Argos Limited {year}. All Rights Reserved.</p>
+        <p className="text-2xs text-white/40">© Argos Limited {year}. All Rights Reserved.</p>
 
         {/* Fine print */}
-        <div className="space-y-1.5 text-2xs text-argos-gray-500 leading-relaxed border-t border-argos-gray-200 pt-3">
+        <div className="space-y-1.5 text-2xs text-white/40 leading-relaxed border-t border-white/10 pt-3">
           <p>
-            <strong>*Argos Pay</strong> is provided by NewDay Ltd. UK residents aged 18 and over.
-            Subject to status. Terms apply.{' '}
-            <strong>Argos Limited is a credit broker and not a lender</strong>, introducing Argos
-            Pay under an exclusive arrangement with the lender NewDay Ltd.
+            <strong className="text-white/60">*Argos Pay</strong> is provided by NewDay Ltd. UK
+            residents aged 18 and over. Subject to status. Terms apply.{' '}
+            <strong className="text-white/60">
+              Argos Limited is a credit broker and not a lender
+            </strong>
+            , introducing Argos Pay under an exclusive arrangement with the lender NewDay Ltd.
           </p>
           <p>
-            <strong>PayPal Pay in 3</strong> is an unregulated credit agreement. Borrowing more than
-            you can afford or paying late may negatively impact your financial status. 18+, UK
-            residents only. Subject to status.
+            <strong className="text-white/60">PayPal Pay in 3</strong> is an unregulated credit
+            agreement. Borrowing more than you can afford or paying late may negatively impact your
+            financial status. 18+, UK residents only. Subject to status.
           </p>
           <p>
-            <strong>Klarna&apos;s Pay in 3</strong> / Pay in 30 days are unregulated credit
-            agreements. 18+, UK residents only. Subject to status. Ts&amp;Cs and late fees apply.
+            <strong className="text-white/60">Klarna&apos;s Pay in 3</strong> / Pay in 30 days are
+            unregulated credit agreements. 18+, UK residents only. Subject to status. Ts&amp;Cs and
+            late fees apply.
           </p>
         </div>
       </div>

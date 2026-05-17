@@ -96,6 +96,20 @@ module.exports = {
       { id: uuidv4(), slug: 'gift-cards',           name: 'Gift Cards',              parent_id: IDS.gifts,        depth: 1, sort_order: 3, is_active: true, created_at: now, updated_at: now },
       { id: uuidv4(), slug: 'gift-wrapping',        name: 'Gift Wrapping',           parent_id: IDS.gifts,        depth: 1, sort_order: 4, is_active: true, created_at: now, updated_at: now },
     ], {})
+
+    // ── Top-level category images — used by homepage category scroll & mega menu
+    const topLevelImages = [
+      { id: IDS.technology,   image_url: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=400&q=80' },
+      { id: IDS.homeGarden,   image_url: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80' },
+      { id: IDS.healthBeauty, image_url: 'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=400&q=80' },
+      { id: IDS.sports,       image_url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=80' },
+      { id: IDS.toys,         image_url: 'https://images.unsplash.com/photo-1558060370-d644479cb6f7?w=400&q=80' },
+      { id: IDS.jewellery,    image_url: 'https://images.unsplash.com/photo-1599643477877-530eb83abc8e?w=400&q=80' },
+      { id: IDS.gifts,        image_url: 'https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&q=80' },
+    ]
+    for (const { id, image_url } of topLevelImages) {
+      await queryInterface.bulkUpdate('categories', { image_url, updated_at: now }, { id })
+    }
   },
 
   async down(queryInterface) {

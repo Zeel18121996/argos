@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectModel } from '@nestjs/sequelize'
-import { Op, Order, WhereOptions } from 'sequelize'
+import { Op, Order, WhereOptions, literal } from 'sequelize'
 import { ProductModel } from './models/product.model'
 import { ProductImageModel } from './models/product-image.model'
 import { ProductVariantModel } from './models/product-variant.model'
@@ -132,8 +132,27 @@ export class ProductsService {
       if (cat) categoryId = cat.id
     }
 
+    // Expand parent categories to include all descendants so /browse/<parent>
+    // surfaces products seeded against leaf subcategories.
+    let categoryIds: string[] | undefined
+    if (categoryId) {
+      categoryIds = await this.categoriesService.findDescendantIds(categoryId)
+    }
+
+    const whereClause = this.buildPublicWhere({ ...query, categoryId }, categoryIds)
+    // Popular sort: restrict to products that have been ordered at least once.
+    // Ordering by total quantity sold is handled in buildOrder.
+    if (query.sortBy === ProductSort.popular) {
+      ;(whereClause as any)[Op.and] = [
+        ...(((whereClause as any)[Op.and] as unknown[]) ?? []),
+        literal(
+          'EXISTS (SELECT 1 FROM order_items oi WHERE oi.product_id = "ProductModel"."id")',
+        ),
+      ]
+    }
+
     const { rows, count } = await this.productModel.findAndCountAll({
-      where: this.buildPublicWhere({ ...query, categoryId }),
+      where: whereClause,
       include: [
         { model: CategoryModel, as: 'category', attributes: ['id', 'slug', 'name'] },
         { model: ProductImageModel, as: 'images', separate: true, order: [['sort_order', 'ASC']] },
@@ -263,10 +282,14 @@ export class ProductsService {
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
-  private buildPublicWhere(query: QueryProductsDto): WhereOptions {
+  private buildPublicWhere(query: QueryProductsDto, categoryIds?: string[]): WhereOptions {
     const where: any = { isActive: true }
 
-    if (query.categoryId) where.categoryId = query.categoryId
+    if (categoryIds && categoryIds.length > 1) {
+      where.categoryId = { [Op.in]: categoryIds }
+    } else if (query.categoryId) {
+      where.categoryId = query.categoryId
+    }
     if (query.slug) where.slug = query.slug
     if (query.brands?.length) where.brand = { [Op.in]: query.brands }
     if (query.minPrice !== undefined) {
@@ -314,6 +337,16 @@ export class ProductsService {
     if (sortBy === 'price-desc') return [['price', 'DESC']]
     if (sortBy === 'rating') return [['rating_average', 'DESC']]
     if (sortBy === 'newest') return [['created_at', 'DESC']]
+    if (sortBy === 'popular') {
+      return [
+        [
+          literal(
+            '(SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi WHERE oi.product_id = "ProductModel"."id")',
+          ),
+          'DESC',
+        ],
+      ]
+    }
     // relevance / default
     return [['created_at', 'DESC']]
   }

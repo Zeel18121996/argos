@@ -18,6 +18,7 @@ export enum ProductSort {
   'price-asc' = 'price-asc',
   'price-desc' = 'price-desc',
   rating = 'rating',
+  popular = 'popular',
 }
 
 export class QueryProductsDto {

@@ -226,7 +226,7 @@ function SearchBar() {
         </span>
         <input
           ref={inputRef}
-          type="search"
+          type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search products or brands"
@@ -548,10 +548,13 @@ function NavTabs({ onShopClick, isMenuOpen }: { onShopClick: () => void; isMenuO
       </button>
       <Link to="/browse/trending" className={item}>
         Trending
-        <ChevronDown size={16} className="inline-block ml-[6px]" aria-hidden="true" />
       </Link>
-      {/* Seasonal promo slot (Argos changes this every few weeks) */}
-      <Link to="/browse/offers" className={cn(item, 'max-w-[110px] text-left whitespace-normal')}>
+      {/* Seasonal promo slot — destination page shows "Coming soon" until the
+          season's campaign is live. */}
+      <Link
+        to="/promotions/summer-of-football"
+        className={cn(item, 'max-w-[110px] text-left whitespace-normal')}
+      >
         <span className="block">
           Summer of
           <br />

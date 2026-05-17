@@ -51,68 +51,81 @@ export default function AccountOrderDetailPage() {
   }
 
   return (
-    <div className="argos-container py-8 max-w-3xl mx-auto">
+    <div className="page-container py-10 max-w-3xl mx-auto">
+      {/* Back link */}
       <Link
         to="/account/orders"
-        className="inline-flex items-center gap-1 text-sm text-argos-blue hover:underline mb-4"
+        className="inline-flex items-center gap-1.5 text-base text-argos-blue hover:underline mb-6"
       >
-        <ArrowLeft size={14} />
+        <ArrowLeft size={16} />
         Back to orders
       </Link>
 
-      <div className="bg-white border border-argos-border rounded p-6 mb-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white border border-argos-border rounded-sm p-8">
+        {/* Header: order number + status */}
+        <div className="flex items-start justify-between mb-6">
           <h1 className="text-xl font-bold text-argos-charcoal">{order.orderNumber}</h1>
-          <span className="text-xs font-bold uppercase tracking-wide text-argos-gray bg-argos-gray-bg px-2 py-0.5 rounded">
+          <span
+            className={`text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-sm ${
+              order.status.toLowerCase() === 'cancelled'
+                ? 'bg-red-50 text-argos-red'
+                : 'bg-argos-green-light text-argos-green-dark'
+            }`}
+          >
             {order.status}
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm mb-6">
+        {/* Meta grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 mb-8 pb-6 border-b border-argos-border">
           <div>
-            <p className="text-argos-gray text-xs mb-0.5">Order date</p>
-            <p className="font-bold text-argos-charcoal">
+            <p className="text-sm text-argos-gray mb-1">Order date</p>
+            <p className="text-base font-bold text-argos-charcoal">
               {new Date(order.createdAt).toLocaleDateString()}
             </p>
           </div>
           <div>
-            <p className="text-argos-gray text-xs mb-0.5">Total</p>
-            <p className="font-bold text-argos-red">{formatPriceFromPounds(order.total / 100)}</p>
+            <p className="text-sm text-argos-gray mb-1">Total</p>
+            <p className="text-base font-bold text-argos-red">
+              {formatPriceFromPounds(order.total / 100)}
+            </p>
           </div>
           <div>
-            <p className="text-argos-gray text-xs mb-0.5">Payment</p>
-            <p className="font-bold text-argos-charcoal capitalize">{order.paymentStatus}</p>
+            <p className="text-sm text-argos-gray mb-1">Payment</p>
+            <p className="text-base font-bold text-argos-charcoal capitalize">
+              {order.paymentStatus}
+            </p>
           </div>
         </div>
 
+        {/* Cancel button */}
         {canCancel && (
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end mb-6">
             <button
               onClick={handleCancel}
               disabled={isCancelling}
-              className="inline-flex items-center gap-1.5 text-sm font-bold text-argos-red border border-argos-red px-4 py-2 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 text-base font-bold text-argos-red border border-argos-red px-5 py-2.5 rounded-sm hover:bg-red-50 transition-colors disabled:opacity-50"
             >
-              <XCircle size={16} />
+              <XCircle size={18} />
               {isCancelling ? 'Cancelling…' : 'Cancel order'}
             </button>
           </div>
         )}
 
+        {/* Tracking */}
         {order.trackingNumber && (
-          <div className="bg-argos-blue-light rounded p-3 mb-4">
-            <p className="text-sm font-bold text-argos-charcoal">Tracking number</p>
-            <p className="text-sm text-argos-blue">{order.trackingNumber}</p>
+          <div className="bg-argos-blue-light rounded-sm p-4 mb-6">
+            <p className="text-base font-bold text-argos-charcoal mb-0.5">Tracking number</p>
+            <p className="text-base text-argos-blue">{order.trackingNumber}</p>
           </div>
         )}
 
-        <h2 className="text-sm font-bold text-argos-charcoal mb-3">Items</h2>
-        <div className="flex flex-col gap-3">
+        {/* Items */}
+        <h2 className="text-base font-bold text-argos-charcoal mb-4">Items</h2>
+        <div className="flex flex-col divide-y divide-argos-border">
           {order.items.map((item) => (
-            <div
-              key={item.id}
-              className="flex gap-3 items-center border-b border-argos-border last:border-0 pb-3 last:pb-0"
-            >
-              <div className="w-14 h-14 bg-white border border-argos-border rounded overflow-hidden flex-shrink-0">
+            <div key={item.id} className="flex gap-4 items-center py-4 first:pt-0 last:pb-0">
+              <div className="w-16 h-16 bg-white border border-argos-border rounded overflow-hidden flex-shrink-0">
                 <img
                   src={resolveImageUrl(item.product?.images?.[0] ?? '')}
                   alt={item.productName}
@@ -120,33 +133,40 @@ export default function AccountOrderDetailPage() {
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-argos-charcoal">{item.productName}</p>
-                {item.variantName && <p className="text-xs text-argos-gray">{item.variantName}</p>}
-                <p className="text-xs text-argos-gray">Qty: {item.quantity}</p>
+                <p className="text-base font-bold text-argos-charcoal leading-snug">
+                  {item.productName}
+                </p>
+                {item.variantName && (
+                  <p className="text-sm text-argos-gray mt-0.5">{item.variantName}</p>
+                )}
+                <p className="text-sm text-argos-gray mt-1">Qty: {item.quantity}</p>
               </div>
-              <span className="text-sm font-bold text-argos-charcoal">
+              <span className="text-base font-bold text-argos-charcoal flex-shrink-0">
                 {formatPriceFromPounds(item.totalPrice / 100)}
               </span>
             </div>
           ))}
         </div>
 
-        <div className="border-t border-argos-border mt-4 pt-4 space-y-1">
-          <div className="flex justify-between text-sm">
-            <span className="text-argos-gray">Subtotal</span>
-            <span className="text-argos-charcoal">
+        {/* Pricing summary */}
+        <div className="border-t border-argos-border mt-6 pt-5 space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-base text-argos-gray">Subtotal</span>
+            <span className="text-base text-argos-charcoal">
               {formatPriceFromPounds(order.subtotal / 100)}
             </span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-argos-gray">Delivery</span>
-            <span className="text-argos-charcoal">
+          <div className="flex justify-between items-center">
+            <span className="text-base text-argos-gray">Delivery</span>
+            <span className="text-base text-argos-charcoal">
               {order.deliveryCost === 0 ? 'Free' : formatPriceFromPounds(order.deliveryCost / 100)}
             </span>
           </div>
-          <div className="flex justify-between text-sm font-bold">
-            <span>Total</span>
-            <span className="text-argos-red">{formatPriceFromPounds(order.total / 100)}</span>
+          <div className="flex justify-between items-center pt-3 border-t border-argos-border">
+            <span className="text-lg font-bold text-argos-charcoal">Total</span>
+            <span className="text-xl font-bold text-argos-red">
+              {formatPriceFromPounds(order.total / 100)}
+            </span>
           </div>
         </div>
       </div>

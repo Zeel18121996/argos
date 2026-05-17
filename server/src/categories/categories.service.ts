@@ -47,6 +47,39 @@ export class CategoriesService {
     return cat
   }
 
+  /**
+   * Returns the given category id plus every descendant id (any depth).
+   * Used by product filtering so /browse/<parent> includes child products.
+   */
+  async findDescendantIds(rootId: string): Promise<string[]> {
+    const all = await this.categoryModel.findAll({
+      where: { isActive: true },
+      attributes: ['id', 'parentId'],
+      raw: true,
+    })
+
+    const childrenByParent = new Map<string, string[]>()
+    for (const c of all as unknown as Array<{ id: string; parentId: string | null }>) {
+      if (!c.parentId) continue
+      const list = childrenByParent.get(c.parentId) ?? []
+      list.push(c.id)
+      childrenByParent.set(c.parentId, list)
+    }
+
+    const result: string[] = [rootId]
+    const stack = [rootId]
+    while (stack.length) {
+      const next = stack.pop() as string
+      const children = childrenByParent.get(next)
+      if (!children) continue
+      for (const childId of children) {
+        result.push(childId)
+        stack.push(childId)
+      }
+    }
+    return result
+  }
+
   async create(dto: CreateCategoryDto) {
     let depth = 0
     if (dto.parentId) {

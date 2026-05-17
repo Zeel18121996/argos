@@ -19,7 +19,7 @@ import { UserModel } from '../users/models/user.model'
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_ACCESS_SECRET'),
-        signOptions: { expiresIn: '15m' },
+        signOptions: { expiresIn: '24h' },
       }),
     }),
     SequelizeModule.forFeature([RefreshTokenModel, UserModel]),

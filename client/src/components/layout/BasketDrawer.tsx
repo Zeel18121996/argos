@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { X, Plus, Minus, ShoppingCart, Trash2 } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { useCart } from '@/hooks/useCart'
@@ -13,8 +13,15 @@ interface BasketDrawerProps {
 }
 
 export function BasketDrawer({ isOpen, onClose }: BasketDrawerProps) {
+  const navigate = useNavigate()
   const { data: basket, isLoading } = useGetBasketQuery(undefined, { skip: !isOpen })
   const { handleUpdateQty, handleRemove } = useCart()
+
+  const handleViewBasket = () => {
+    onClose()
+    navigate('/basket')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   const items = basket?.items ?? []
   const total = basket?.summary.total ?? 0
@@ -50,17 +57,17 @@ export function BasketDrawer({ isOpen, onClose }: BasketDrawerProps) {
         aria-label="Shopping basket"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 h-14 border-b border-argos-border shrink-0">
-          <div className="flex items-center gap-2">
-            <ShoppingCart size={20} className="text-argos-charcoal" />
-            <span className="font-bold text-argos-charcoal">Your basket ({itemCount})</span>
+        <div className="flex items-center justify-between px-5 h-16 border-b border-argos-border shrink-0">
+          <div className="flex items-center gap-2.5">
+            <ShoppingCart size={22} className="text-argos-charcoal" />
+            <span className="text-base font-bold text-argos-charcoal">Your basket ({itemCount})</span>
           </div>
           <button
             onClick={onClose}
             className="p-2 text-argos-gray-700 hover:text-argos-charcoal focus-ring rounded"
             aria-label="Close basket"
           >
-            <X size={20} />
+            <X size={22} />
           </button>
         </div>
 
@@ -74,87 +81,88 @@ export function BasketDrawer({ isOpen, onClose }: BasketDrawerProps) {
             </div>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-              <ShoppingCart size={48} className="text-argos-gray-light mb-4" />
-              <p className="text-sm font-bold text-argos-charcoal mb-1">Your basket is empty</p>
-              <p className="text-xs text-argos-gray mb-4">Add items to get started</p>
+              <ShoppingCart size={52} className="text-argos-gray-light mb-5" />
+              <p className="text-base font-bold text-argos-charcoal mb-1.5">Your basket is empty</p>
+              <p className="text-sm text-argos-gray mb-5">Add items to get started</p>
               <button onClick={onClose} className="text-sm text-argos-blue hover:underline">
                 Continue shopping
               </button>
             </div>
           ) : (
-            <div className="flex flex-col">
-              {items.map((item, i) => (
-                <div
-                  key={item.id}
-                  className={cn('flex gap-3 p-4', i > 0 && 'border-t border-argos-border')}
-                >
+            <div className="flex flex-col divide-y divide-argos-border">
+              {items.map((item) => (
+                <div key={item.id} className="flex gap-4 p-5">
+                  {/* Thumbnail */}
                   <Link
                     to={`/product/${item.product.slug}`}
                     onClick={onClose}
                     className="flex-shrink-0"
                   >
-                    <div className="w-16 h-16 bg-argos-gray-bg rounded overflow-hidden">
+                    <div className="w-20 h-20 bg-argos-gray-bg rounded overflow-hidden">
                       <img
                         src={resolveImageUrl(item.product.images[0])}
                         alt={item.product.name}
-                        className="w-full h-full object-contain p-1"
+                        className="w-full h-full object-contain p-1.5"
                       />
                     </div>
                   </Link>
 
+                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <Link
                       to={`/product/${item.product.slug}`}
                       onClick={onClose}
-                      className="text-xs font-bold text-argos-charcoal hover:text-argos-blue hover:underline line-clamp-2"
+                      className="text-sm font-bold text-argos-charcoal hover:text-argos-blue hover:underline line-clamp-2 leading-snug"
                     >
                       {item.product.name}
                     </Link>
-                    <p className="text-[11px] text-argos-gray-mid mb-1.5">{item.product.sku}</p>
+                    <p className="text-xs text-argos-gray-mid mt-1 mb-3">{item.product.sku}</p>
 
-                    <div className="flex items-center justify-between">
-                      {/* Qty stepper */}
-                      <div className="flex items-center border border-argos-gray-light rounded">
-                        <button
-                          onClick={() => {
-                            if (item.quantity <= 1) {
-                              handleRemove(item.product.id)
-                            } else {
-                              handleUpdateQty(item.product.id, item.quantity - 1)
-                            }
-                          }}
-                          className="px-2 py-1 text-argos-charcoal hover:bg-argos-gray-bg font-bold"
-                        >
-                          <Minus size={12} />
-                        </button>
-                        <span className="px-2 text-xs font-bold min-w-[1.5rem] text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => handleUpdateQty(item.product.id, item.quantity + 1)}
-                          className="px-2 py-1 text-argos-charcoal hover:bg-argos-gray-bg font-bold"
-                        >
-                          <Plus size={12} />
-                        </button>
-                      </div>
-
+                    {/* Qty stepper */}
+                    <div className="flex items-center border border-argos-gray-light rounded-sm overflow-hidden w-fit">
                       <button
-                        onClick={() => handleRemove(item.product.id)}
-                        className="text-argos-gray hover:text-argos-red transition-colors p-1"
-                        aria-label="Remove item"
+                        onClick={() => {
+                          if (item.quantity <= 1) {
+                            handleRemove(item.product.id)
+                          } else {
+                            handleUpdateQty(item.product.id, item.quantity - 1)
+                          }
+                        }}
+                        className="w-8 h-8 flex items-center justify-center text-argos-charcoal hover:bg-argos-gray-bg transition-colors"
+                        aria-label="Decrease quantity"
                       >
-                        <Trash2 size={14} />
+                        <Minus size={13} />
+                      </button>
+                      <span className="w-8 h-8 flex items-center justify-center text-sm font-bold border-x border-argos-gray-light">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => handleUpdateQty(item.product.id, item.quantity + 1)}
+                        className="w-8 h-8 flex items-center justify-center text-argos-charcoal hover:bg-argos-gray-bg transition-colors"
+                        aria-label="Increase quantity"
+                      >
+                        <Plus size={13} />
                       </button>
                     </div>
                   </div>
 
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-sm font-bold text-argos-dark">
-                      {formatPriceFromPounds((item.unitPrice * item.quantity) / 100)}
-                    </p>
-                    <p className="text-[11px] text-argos-gray-mid">
-                      {formatPriceFromPounds(item.unitPrice / 100)} each
-                    </p>
+                  {/* Price + Delete — stacked in right column */}
+                  <div className="flex flex-col items-end justify-between flex-shrink-0">
+                    <div className="text-right">
+                      <p className="text-base font-bold text-argos-dark">
+                        {formatPriceFromPounds((item.unitPrice * item.quantity) / 100)}
+                      </p>
+                      <p className="text-xs text-argos-gray-mid mt-0.5">
+                        {formatPriceFromPounds(item.unitPrice / 100)} each
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleRemove(item.product.id)}
+                      className="text-argos-gray hover:text-argos-red transition-colors p-1 mt-2"
+                      aria-label="Remove item"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -164,23 +172,22 @@ export function BasketDrawer({ isOpen, onClose }: BasketDrawerProps) {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="shrink-0 border-t border-argos-border p-4 bg-argos-gray-bg">
+          <div className="shrink-0 border-t border-argos-border p-5 bg-argos-gray-bg">
             <div className="flex justify-between items-center mb-4">
-              <span className="text-sm font-bold text-argos-charcoal">Total</span>
-              <span className="text-lg font-bold text-argos-dark">
+              <span className="text-base font-bold text-argos-charcoal">Total</span>
+              <span className="text-xl font-bold text-argos-dark">
                 {formatPriceFromPounds(total / 100)}
               </span>
             </div>
-            <Link
-              to="/basket"
-              onClick={onClose}
-              className="block w-full bg-argos-green text-white text-sm font-bold py-3 rounded-sm hover:bg-argos-green-dark transition-colors text-center"
+            <button
+              onClick={handleViewBasket}
+              className="block w-full bg-argos-green text-white text-base font-bold py-4 rounded-sm hover:bg-argos-green-dark transition-colors text-center"
             >
               View full basket & checkout
-            </Link>
+            </button>
             <button
               onClick={onClose}
-              className="block w-full text-center text-sm text-argos-blue hover:underline mt-2"
+              className="block w-full text-center text-base text-argos-blue hover:underline mt-3"
             >
               Continue shopping
             </button>

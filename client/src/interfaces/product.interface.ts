@@ -71,10 +71,10 @@ export interface ProductReview {
 
 export interface ProductListParams {
   categorySlug?: string
-  search?: string
+  q?: string
   page?: number
   limit?: number
-  sortBy?: 'relevance' | 'price-asc' | 'price-desc' | 'rating' | 'newest'
+  sortBy?: 'relevance' | 'price-asc' | 'price-desc' | 'rating' | 'newest' | 'popular'
   minPrice?: number
   maxPrice?: number
   brand?: string
@@ -85,10 +85,14 @@ export interface ProductListParams {
   isClearance?: boolean
 }
 
-export interface ProductListResponse {
-  items: Product[]
-  total: number
+export interface PaginationMeta {
   page: number
   limit: number
+  total: number
   totalPages: number
+}
+
+export interface ProductListResponse {
+  items: Product[]
+  meta: PaginationMeta
 }

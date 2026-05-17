@@ -1,9 +1,10 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { lazy, Suspense, type ReactElement } from 'react'
 import { RootLayout } from '@/components/layout/RootLayout'
 import { AdminLayout } from '@/components/layout/AdminLayout'
 import { ProtectedRoute } from '@/components/Common/ProtectedRoute'
 import { StaffRoute } from '@/components/Common/StaffRoute'
+import { useAuth } from '@/hooks/useAuth'
 
 // Lazy-load all pages
 const HomePage = lazy(() => import('@/pages/HomePage'))
@@ -36,11 +37,27 @@ const AdminCategoriesPage = lazy(() => import('@/pages/AdminCategoriesPage'))
 // Placeholder for pages not yet built
 function ComingSoon({ page }: { page: string }) {
   return (
-    <div className="page-container py-16 text-center">
-      <h1 className="text-2xl font-bold text-argos-gray-800">{page}</h1>
-      <p className="mt-2 text-argos-gray-500">Coming in a future phase.</p>
+    <div className="page-container py-20 text-center">
+      <h1 className="text-3xl font-bold text-argos-gray-800">{page}</h1>
+      <p className="mt-3 text-lg font-semibold text-argos-red">Coming soon</p>
+      <p className="mt-2 text-argos-gray-500">
+        We're putting the finishing touches on this section. Check back shortly.
+      </p>
     </div>
   )
+}
+
+/**
+ * Root route element — staff/admin land on /admin, everyone else sees the
+ * shopper home page. Runs on every visit to "/", so a reload also respects
+ * the user's role.
+ */
+function HomeOrAdmin() {
+  const { isAuthenticated, isStaff } = useAuth()
+  if (isAuthenticated && isStaff) {
+    return <Navigate to="/admin" replace />
+  }
+  return wrap(HomePage)
 }
 
 function PageLoader() {
@@ -84,7 +101,7 @@ const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       // ── Public ──────────────────────────────────────────────────────────
-      { index: true, element: wrap(HomePage) },
+      { index: true, element: <HomeOrAdmin /> },
       { path: 'browse/*', element: wrap(BrowsePage) },
       { path: 'search', element: wrap(SearchPage) },
       { path: 'product/:slug', element: wrap(ProductDetailPage) },
@@ -97,6 +114,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <ComingSoon page="Help Article" />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'promotions/summer-of-football',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ComingSoon page="Summer of football" />
           </Suspense>
         ),
       },

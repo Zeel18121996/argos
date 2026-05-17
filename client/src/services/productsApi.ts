@@ -8,13 +8,16 @@ import type {
 export const productsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query<ProductListResponse, ProductListParams>({
-      query: (params) => ({
-        url: '/products',
-        params: {
-          ...params,
-          brands: params.brand ? [params.brand] : undefined,
-        },
-      }),
+      query: (params) => {
+        const { brand, ...rest } = params
+        return {
+          url: '/products',
+          params: {
+            ...rest,
+            ...(brand ? { brands: [brand] } : {}),
+          },
+        }
+      },
       providesTags: (result) =>
         result
           ? [

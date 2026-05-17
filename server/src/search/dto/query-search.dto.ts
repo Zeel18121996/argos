@@ -1,5 +1,6 @@
-import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
+import { IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator'
 import { Transform, Type } from 'class-transformer'
+import { ProductSort } from '../../products/dto/query-products.dto'
 
 export class QuerySearchDto {
   @IsString()
@@ -19,4 +20,8 @@ export class QuerySearchDto {
   @Min(1)
   @Max(100)
   limit?: number = 24
+
+  @IsOptional()
+  @IsEnum(ProductSort)
+  sortBy?: ProductSort
 }

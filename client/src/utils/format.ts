@@ -29,6 +29,21 @@ export const formatDate = (dateString: string): string => {
   })
 }
 
+export const formatDateTime = (dateString: string): string => {
+  const date = new Date(dateString)
+  const datePart = date.toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+  const timePart = date.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
+  return `${datePart}, ${timePart}`
+}
+
 export const slugify = (text: string): string =>
   text
     .toLowerCase()

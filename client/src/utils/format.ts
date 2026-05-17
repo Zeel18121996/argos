@@ -1,10 +1,19 @@
-export const formatPrice = (pence: number): string => {
-  const pounds = pence / 100
-  return pounds % 1 === 0 ? `£${pounds.toFixed(0)}` : `£${pounds.toFixed(2)}`
+const inrFormatter = new Intl.NumberFormat('en-IN', {
+  style: 'currency',
+  currency: 'INR',
+  maximumFractionDigits: 2,
+})
+
+const formatRupees = (rupees: number): string => {
+  if (rupees % 1 === 0) {
+    return `₹${rupees.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
+  }
+  return inrFormatter.format(rupees)
 }
 
-export const formatPriceFromPounds = (pounds: number): string =>
-  pounds % 1 === 0 ? `£${pounds.toFixed(0)}` : `£${pounds.toFixed(2)}`
+export const formatPrice = (paise: number): string => formatRupees(paise / 100)
+
+export const formatPriceFromPounds = (rupees: number): string => formatRupees(rupees)
 
 export const formatRating = (rating: number): string => rating.toFixed(1)
 
@@ -13,7 +22,7 @@ export const formatReviewCount = (count: number): string =>
 
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString)
-  return date.toLocaleDateString('en-GB', {
+  return date.toLocaleDateString('en-IN', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

@@ -1,23 +1,23 @@
 /**
- * Converts pence (integer) to a formatted GBP string.
- * ALL prices in the DB are stored in pence.
+ * Converts paise (integer) to a formatted INR string.
+ * ALL prices in the DB are stored in paise (1/100 ₹).
  *
  * @example
- * formatPrice(2999)  // "£29.99"
- * formatPrice(500)   // "£5.00"
+ * formatPrice(2999)  // "₹29.99"
+ * formatPrice(500)   // "₹5.00"
  */
-export function formatPrice(pence: number): string {
-  return `£${(pence / 100).toFixed(2)}`
+export function formatPrice(paise: number): string {
+  return `₹${(paise / 100).toFixed(2)}`
 }
 
 /**
- * Converts a float pound value to integer pence for storage.
+ * Converts a float rupee value to integer paise for storage.
  *
  * @example
  * poundsToPence(29.99)  // 2999
  */
-export function poundsToPence(pounds: number): number {
-  return Math.round(pounds * 100)
+export function poundsToPence(rupees: number): number {
+  return Math.round(rupees * 100)
 }
 
 /**
@@ -26,7 +26,7 @@ export function poundsToPence(pounds: number): number {
  * @example
  * discountPercent(3999, 2999)  // 25  (25% off)
  */
-export function discountPercent(originalPence: number, salePence: number): number {
-  if (originalPence <= 0) return 0
-  return Math.round(((originalPence - salePence) / originalPence) * 100)
+export function discountPercent(originalPaise: number, salePaise: number): number {
+  if (originalPaise <= 0) return 0
+  return Math.round(((originalPaise - salePaise) / originalPaise) * 100)
 }

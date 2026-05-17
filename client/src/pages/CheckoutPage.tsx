@@ -9,7 +9,7 @@ import {
   AlertCircle,
 } from 'lucide-react'
 import { useGetBasketQuery } from '@/services/basketApi'
-import { useCheckoutMutation } from '@/services/ordersApi'
+import { useCreatePaymentMutation, useVerifyPaymentMutation } from '@/services/ordersApi'
 import { formatPriceFromPounds } from '@/utils/format'
 import { resolveImageUrl } from '@/utils/imageUrl'
 import { cn } from '@/utils/cn'
@@ -24,15 +24,16 @@ const STEPS: { id: Step; label: string; icon: typeof MapPin }[] = [
 ]
 
 const DELIVERY_OPTIONS = [
-  { id: 'standard', label: 'Standard delivery', eta: '3-5 working days', cost: 395 },
-  { id: 'next_day', label: 'Next day delivery', eta: 'Order by 8pm', cost: 695 },
+  { id: 'standard', label: 'Standard delivery', eta: '3-5 working days', cost: 4900 },
+  { id: 'next_day', label: 'Next day delivery', eta: 'Order by 8pm', cost: 9900 },
   { id: 'click_collect', label: 'Click & Collect', eta: 'Collect in store', cost: 0 },
 ] as const
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
   const { data: basket, isLoading: basketLoading } = useGetBasketQuery()
-  const [checkout, { isLoading: isPlacingOrder }] = useCheckoutMutation()
+  const [createPayment, { isLoading: isCreatingPayment }] = useCreatePaymentMutation()
+  const [verifyPayment, { isLoading: isVerifying }] = useVerifyPaymentMutation()
 
   const [step, setStep] = useState<Step>('delivery')
   const [address, setAddress] = useState({
@@ -43,21 +44,21 @@ export default function CheckoutPage() {
     city: '',
     postcode: '',
     phone: '',
+    email: '',
   })
   const [deliveryMethod, setDeliveryMethod] = useState<'standard' | 'next_day' | 'click_collect'>(
     'standard',
   )
-  const [cardNumber, setCardNumber] = useState('')
-  const [expiry, setExpiry] = useState('')
-  const [cvc, setCvc] = useState('')
   const [paymentError, setPaymentError] = useState('')
 
   const items = basket?.items ?? []
   const subtotal = basket?.summary.subtotal ?? 0
-  const deliveryCost = DELIVERY_OPTIONS.find((d) => d.id === deliveryMethod)?.cost ?? 395
+  const deliveryCost = DELIVERY_OPTIONS.find((d) => d.id === deliveryMethod)?.cost ?? 4900
   const total = subtotal + deliveryCost
 
   const canContinueDelivery = address.line1 && address.city && address.postcode
+
+  const isProcessing = isCreatingPayment || isVerifying
 
   if (basketLoading) {
     return (
@@ -83,24 +84,64 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     setPaymentError('')
+
+    if (typeof window.Razorpay !== 'function') {
+      const msg = 'Payment library failed to load. Refresh the page and try again.'
+      setPaymentError(msg)
+      toast.error(msg)
+      return
+    }
+
+    const addressPayload = {
+      line1: address.line1,
+      line2: address.line2 || undefined,
+      city: address.city,
+      postcode: address.postcode,
+      firstName: address.firstName || undefined,
+      lastName: address.lastName || undefined,
+      phone: address.phone || undefined,
+      email: address.email || undefined,
+      deliveryMethod,
+    }
+
     try {
-      const result = await checkout({
-        line1: address.line1,
-        line2: address.line2,
-        city: address.city,
-        postcode: address.postcode,
-        firstName: address.firstName,
-        lastName: address.lastName,
-        phone: address.phone,
-        deliveryMethod,
-        cardNumber,
-        expiry,
-        cvc,
-      }).unwrap()
-      setStep('confirmation')
-      navigate(`/checkout/confirmation/${result.orderId}`, { replace: true })
+      const rzpOrder = await createPayment(addressPayload).unwrap()
+
+      const razorpay = new window.Razorpay({
+        key: rzpOrder.keyId,
+        amount: rzpOrder.amount,
+        currency: rzpOrder.currency,
+        name: 'Argos',
+        description: 'Order payment',
+        order_id: rzpOrder.razorpayOrderId,
+        prefill: rzpOrder.prefill,
+        theme: { color: '#D42114' },
+        modal: {
+          ondismiss: () => {
+            setPaymentError('Payment was cancelled. You can try again.')
+          },
+        },
+        handler: async (response) => {
+          try {
+            const result = await verifyPayment({
+              ...addressPayload,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature,
+            }).unwrap()
+            setStep('confirmation')
+            navigate(`/checkout/confirmation/${result.orderId}`, { replace: true })
+          } catch (err: any) {
+            const msg = err?.data?.message ?? err?.message ?? 'Could not confirm payment.'
+            setPaymentError(msg)
+            toast.error(msg)
+          }
+        },
+      })
+
+      razorpay.open()
     } catch (err: any) {
-      const msg = err?.data?.message ?? err?.message ?? 'Payment failed. Please try again.'
+      const msg = err?.data?.message ?? err?.message ?? 'Could not start payment. Please try again.'
       setPaymentError(msg)
       toast.error(msg)
     }
@@ -215,24 +256,40 @@ export default function CheckoutPage() {
                   </div>
                   <div>
                     <label className="text-sm font-bold text-argos-charcoal block mb-1">
-                      Postcode <span className="text-argos-red">*</span>
+                      Pincode <span className="text-argos-red">*</span>
                     </label>
                     <input
                       value={address.postcode}
                       onChange={(e) => setAddress({ ...address, postcode: e.target.value })}
                       className="w-full border border-argos-gray-light rounded px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-argos-blue"
-                      placeholder="e.g. EC1A 1BB"
+                      placeholder="e.g. 400001"
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm font-bold text-argos-charcoal block mb-1">Phone</label>
-                  <input
-                    value={address.phone}
-                    onChange={(e) => setAddress({ ...address, phone: e.target.value })}
-                    className="w-full border border-argos-gray-light rounded px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-argos-blue"
-                    placeholder="Mobile number for delivery updates"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-bold text-argos-charcoal block mb-1">
+                      Phone
+                    </label>
+                    <input
+                      value={address.phone}
+                      onChange={(e) => setAddress({ ...address, phone: e.target.value })}
+                      className="w-full border border-argos-gray-light rounded px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-argos-blue"
+                      placeholder="Mobile number"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-bold text-argos-charcoal block mb-1">
+                      Email
+                    </label>
+                    <input
+                      value={address.email}
+                      onChange={(e) => setAddress({ ...address, email: e.target.value })}
+                      className="w-full border border-argos-gray-light rounded px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-argos-blue"
+                      placeholder="you@example.com"
+                      type="email"
+                    />
+                  </div>
                 </div>
 
                 <h3 className="text-sm font-bold text-argos-charcoal mt-2">Delivery method</h3>
@@ -282,69 +339,43 @@ export default function CheckoutPage() {
 
           {step === 'payment' && (
             <div>
-              <h2 className="text-lg font-bold text-argos-charcoal mb-5">Payment details</h2>
-              <div className="flex flex-col gap-4 max-w-sm">
+              <h2 className="text-lg font-bold text-argos-charcoal mb-5">Payment</h2>
+              <div className="flex flex-col gap-4 max-w-md">
                 {paymentError && (
                   <div className="bg-red-50 border border-red-200 text-red-700 text-sm p-3 rounded flex items-center gap-2">
                     <AlertCircle size={16} />
                     {paymentError}
                   </div>
                 )}
-                <div>
-                  <label className="text-sm font-bold text-argos-charcoal block mb-1">
-                    Card number
-                  </label>
-                  <input
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    className="w-full border border-argos-gray-light rounded px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-argos-blue"
-                    placeholder="1234 5678 9012 3456"
-                    maxLength={19}
-                  />
-                  <p className="text-xs text-argos-gray mt-1">
-                    Test card 4000000000000002 will decline. Any other card succeeds.
+
+                <div className="bg-argos-gray-bg border border-argos-border rounded p-4 text-sm text-argos-charcoal">
+                  <p className="font-bold mb-1">Pay securely with Razorpay</p>
+                  <p className="text-argos-gray">
+                    Click the button below to open the Razorpay payment window. You can pay using
+                    UPI, cards, net banking or wallets.
+                  </p>
+                  <p className="text-xs text-argos-gray mt-2">
+                    Test card: <code>4111 1111 1111 1111</code>, any future expiry, any CVV.
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-bold text-argos-charcoal block mb-1">
-                      Expiry date
-                    </label>
-                    <input
-                      value={expiry}
-                      onChange={(e) => setExpiry(e.target.value)}
-                      className="w-full border border-argos-gray-light rounded px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-argos-blue"
-                      placeholder="MM/YY"
-                      maxLength={5}
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-bold text-argos-charcoal block mb-1">CVV</label>
-                    <input
-                      value={cvc}
-                      onChange={(e) => setCvc(e.target.value)}
-                      className="w-full border border-argos-gray-light rounded px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-argos-blue"
-                      placeholder="123"
-                      maxLength={4}
-                    />
-                  </div>
-                </div>
+
                 <div className="flex gap-3 mt-2">
                   <button
                     onClick={() => setStep('delivery')}
-                    className="border border-argos-gray-light text-argos-charcoal font-bold py-3 px-6 rounded hover:bg-argos-gray-bg transition-colors flex items-center gap-2"
+                    disabled={isProcessing}
+                    className="border border-argos-gray-light text-argos-charcoal font-bold py-3 px-6 rounded hover:bg-argos-gray-bg transition-colors flex items-center gap-2 disabled:opacity-50"
                   >
                     <ChevronLeft size={16} />
                     Back
                   </button>
                   <button
                     onClick={handlePlaceOrder}
-                    disabled={!cardNumber || !expiry || !cvc || isPlacingOrder}
+                    disabled={isProcessing}
                     className="bg-argos-blue text-white font-bold py-3 px-8 rounded hover:bg-argos-blue-dark transition-colors flex items-center gap-2 disabled:opacity-50"
                   >
-                    {isPlacingOrder
-                      ? 'Placing order…'
-                      : `Place order — ${formatPriceFromPounds(total / 100)}`}
+                    {isProcessing
+                      ? 'Processing…'
+                      : `Pay ${formatPriceFromPounds(total / 100)} with Razorpay`}
                   </button>
                 </div>
               </div>

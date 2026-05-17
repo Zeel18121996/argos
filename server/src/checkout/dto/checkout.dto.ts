@@ -1,6 +1,6 @@
-import { IsString, IsNotEmpty, IsOptional, IsIn, Length } from 'class-validator'
+import { IsString, IsNotEmpty, IsOptional, IsIn, IsEmail } from 'class-validator'
 
-export class CheckoutDto {
+export class CreateCheckoutDto {
   @IsString()
   @IsNotEmpty()
   line1: string
@@ -30,23 +30,23 @@ export class CheckoutDto {
   phone?: string
 
   @IsOptional()
-  @IsString()
+  @IsEmail()
   email?: string
 
   @IsIn(['standard', 'next_day', 'click_collect'])
   deliveryMethod: string
+}
+
+export class VerifyCheckoutDto extends CreateCheckoutDto {
+  @IsString()
+  @IsNotEmpty()
+  razorpayOrderId: string
 
   @IsString()
   @IsNotEmpty()
-  cardNumber: string
+  razorpayPaymentId: string
 
   @IsString()
   @IsNotEmpty()
-  @Length(5, 5)
-  expiry: string
-
-  @IsString()
-  @IsNotEmpty()
-  @Length(3, 4)
-  cvc: string
+  razorpaySignature: string
 }

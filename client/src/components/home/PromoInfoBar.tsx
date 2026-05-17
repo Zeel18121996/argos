@@ -3,7 +3,7 @@ import { Tag, Truck, CreditCard } from 'lucide-react'
 const PROMOS = [
   { icon: CreditCard, text: 'Argos Pay – 0% interest available on 100s of products' },
   { icon: Tag, text: 'Shop our latest offers – save up to 50%' },
-  { icon: Truck, text: 'Argos Plus – unlimited delivery for a whole year from £9.99' },
+  { icon: Truck, text: 'Argos Plus – unlimited delivery for a whole year from ₹999' },
 ]
 
 export function PromoInfoBar() {

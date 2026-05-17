@@ -65,17 +65,17 @@ const HERO_SLIDES: HeroSlide[] = [
       {
         image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&q=80',
         name: 'Sony BRAVIA 7 Smart 4K HDR QLED Freeview TV',
-        pricePerMonth: 'From £74.96 pm*',
+        pricePerMonth: 'From ₹7,499 pm*',
       },
       {
         image: 'https://images.unsplash.com/photo-1610889556528-9a770e32642f?w=400&q=80',
         name: 'Sage The Barista Express Espresso Coffee Machine',
-        pricePerMonth: 'From £20.79 pm*',
+        pricePerMonth: 'From ₹2,099 pm*',
       },
       {
         image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80',
         name: 'Habitat Julien Velvet 2 Seater Sofa',
-        pricePerMonth: 'From £24.80 pm*',
+        pricePerMonth: 'From ₹2,499 pm*',
       },
     ],
   },

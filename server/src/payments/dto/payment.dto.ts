@@ -1,21 +1,15 @@
-import { IsString, IsNotEmpty, IsOptional, Length, Matches } from 'class-validator'
+import { IsString, IsNotEmpty } from 'class-validator'
 
-export class ProcessPaymentDto {
+export class VerifyPaymentDto {
   @IsString()
   @IsNotEmpty()
-  cardNumber: string
-
-  @IsString()
-  @IsNotEmpty()
-  @Length(5, 5)
-  expiry: string
+  razorpayOrderId: string
 
   @IsString()
   @IsNotEmpty()
-  @Length(3, 4)
-  cvc: string
+  razorpayPaymentId: string
 
-  @IsOptional()
   @IsString()
-  amount?: string
+  @IsNotEmpty()
+  razorpaySignature: string
 }

@@ -41,7 +41,7 @@ export interface OrderDetail extends OrderSummary {
   guestEmail: string | null
 }
 
-export interface CheckoutPayload {
+export interface CreateCheckoutPayload {
   line1: string
   line2?: string
   city: string
@@ -49,10 +49,26 @@ export interface CheckoutPayload {
   firstName?: string
   lastName?: string
   phone?: string
+  email?: string
   deliveryMethod: 'standard' | 'next_day' | 'click_collect'
-  cardNumber: string
-  expiry: string
-  cvc: string
+}
+
+export interface VerifyCheckoutPayload extends CreateCheckoutPayload {
+  razorpayOrderId: string
+  razorpayPaymentId: string
+  razorpaySignature: string
+}
+
+export interface CreatePaymentResponse {
+  razorpayOrderId: string
+  amount: number
+  currency: string
+  keyId: string
+  prefill: {
+    name: string
+    email: string
+    contact: string
+  }
 }
 
 export interface TrackParams {
@@ -72,11 +88,15 @@ export const ordersApi = baseApi.injectEndpoints({
       providesTags: (_result, _err, id) => [{ type: 'Order', id }],
     }),
 
-    checkout: builder.mutation<
+    createPayment: builder.mutation<CreatePaymentResponse, CreateCheckoutPayload>({
+      query: (body) => ({ url: '/checkout/create-payment', method: 'POST', body }),
+    }),
+
+    verifyPayment: builder.mutation<
       { orderId: string; orderNumber: string; status: string; total: number },
-      CheckoutPayload
+      VerifyCheckoutPayload
     >({
-      query: (body) => ({ url: '/checkout', method: 'POST', body }),
+      query: (body) => ({ url: '/checkout/verify', method: 'POST', body }),
       invalidatesTags: ['Basket', 'Order'],
     }),
 
@@ -110,7 +130,8 @@ export const ordersApi = baseApi.injectEndpoints({
 export const {
   useGetOrdersQuery,
   useGetOrderQuery,
-  useCheckoutMutation,
+  useCreatePaymentMutation,
+  useVerifyPaymentMutation,
   useCancelOrderMutation,
   useTrackOrderQuery,
   useGetAdminOrdersQuery,

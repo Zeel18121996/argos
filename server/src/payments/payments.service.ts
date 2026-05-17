@@ -1,49 +1,54 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
-import { v4 as uuidv4 } from 'uuid'
-import type { ProcessPaymentDto } from './dto/payment.dto'
+import { Injectable, Inject, BadRequestException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import * as crypto from 'crypto'
+import Razorpay from 'razorpay'
+import { RAZORPAY_CLIENT } from './razorpay.provider'
 
-export interface PaymentResult {
-  paymentIntentId: string
-  status: 'succeeded' | 'failed'
-  message?: string
+export interface CreateOrderResult {
+  razorpayOrderId: string
+  amount: number
+  currency: string
+  keyId: string
 }
 
 @Injectable()
 export class PaymentsService {
-  /** Simulated card processor.
-   * Test card 4000000000000002 always fails.
-   * All other cards succeed (after basic Luhn check).
-   */
-  async charge(dto: ProcessPaymentDto): Promise<PaymentResult> {
-    const cleaned = dto.cardNumber.replace(/\s/g, '')
-    if (cleaned === '4000000000000002') {
-      return {
-        paymentIntentId: `pi_failed_${uuidv4()}`,
-        status: 'failed',
-        message: 'Your card was declined. Please try a different payment method.',
-      }
+  constructor(
+    @Inject(RAZORPAY_CLIENT) private readonly razorpay: Razorpay,
+    private readonly config: ConfigService,
+  ) {}
+
+  /** Create a Razorpay order. Amount is in paise (1/100 INR). */
+  async createOrder(amount: number, receipt: string): Promise<CreateOrderResult> {
+    if (!Number.isInteger(amount) || amount <= 0) {
+      throw new BadRequestException('Invalid order amount')
     }
-    if (!this.luhnCheck(cleaned)) {
-      throw new BadRequestException('Invalid card number')
-    }
+    const order = await this.razorpay.orders.create({
+      amount,
+      currency: 'INR',
+      receipt,
+    })
     return {
-      paymentIntentId: `pi_${uuidv4()}`,
-      status: 'succeeded',
+      razorpayOrderId: order.id,
+      amount: typeof order.amount === 'string' ? parseInt(order.amount, 10) : order.amount,
+      currency: order.currency,
+      keyId: this.config.getOrThrow<string>('RAZORPAY_KEY_ID'),
     }
   }
 
-  private luhnCheck(value: string): boolean {
-    if (/[^0-9-\s]+/.test(value)) return false
-    let nCheck = 0
-    let bEven = false
-    for (let n = value.length - 1; n >= 0; n--) {
-      let nDigit = parseInt(value.charAt(n), 10)
-      if (bEven) {
-        if ((nDigit *= 2) > 9) nDigit -= 9
-      }
-      nCheck += nDigit
-      bEven = !bEven
+  /** Verify the signature returned by Razorpay's hosted checkout.
+   * Razorpay HMAC-SHA256 signs `${razorpay_order_id}|${razorpay_payment_id}` with the key_secret.
+   */
+  verifySignature(orderId: string, paymentId: string, signature: string): void {
+    const secret = this.config.getOrThrow<string>('RAZORPAY_KEY_SECRET')
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(`${orderId}|${paymentId}`)
+      .digest('hex')
+    const expectedBuf = Buffer.from(expected, 'hex')
+    const actualBuf = Buffer.from(signature, 'hex')
+    if (expectedBuf.length !== actualBuf.length || !crypto.timingSafeEqual(expectedBuf, actualBuf)) {
+      throw new BadRequestException('Invalid payment signature')
     }
-    return nCheck % 10 === 0
   }
 }

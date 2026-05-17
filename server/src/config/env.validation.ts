@@ -35,4 +35,8 @@ export const envValidationSchema = Joi.object({
 
   // When false, NestJS won't auto-sync model schema — rely on sequelize-cli migrations.
   SEQUELIZE_SYNC: Joi.string().valid('true', 'false').default('true'),
+
+  // Razorpay (test or live mode). Get from https://dashboard.razorpay.com/app/keys
+  RAZORPAY_KEY_ID: Joi.string().required(),
+  RAZORPAY_KEY_SECRET: Joi.string().required(),
 })

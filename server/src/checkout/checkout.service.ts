@@ -2,14 +2,22 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { InjectModel } from '@nestjs/sequelize'
 import { Op } from 'sequelize'
 import { BasketService } from '../basket/basket.service'
-import { PaymentsService } from '../payments/payments.service'
+import { PaymentsService, CreateOrderResult } from '../payments/payments.service'
 import { OrdersService } from '../orders/orders.service'
 import { EmailService } from '../email/email.service'
 import { UsersService } from '../users/users.service'
-import { CheckoutDto } from './dto/checkout.dto'
+import { CreateCheckoutDto, VerifyCheckoutDto } from './dto/checkout.dto'
 import type { OrderModel } from '../orders/models/order.model'
 import { ProductModel } from '../products/models/product.model'
 import { ProductVariantModel } from '../products/models/product-variant.model'
+
+export interface CreatePaymentResult extends CreateOrderResult {
+  prefill: {
+    name: string
+    email: string
+    contact: string
+  }
+}
 
 @Injectable()
 export class CheckoutService {
@@ -25,44 +33,58 @@ export class CheckoutService {
     private readonly variantModel: typeof ProductVariantModel,
   ) {}
 
-  /** One-shot checkout: address + payment in one request.
-   *  Creates order, clears basket, sends email.
-   */
-  async checkout(
+  /** Step 1: validate basket, compute total, create a Razorpay order. No DB order yet. */
+  async createPayment(
     userId: string | null,
     sessionId: string | null,
-    dto: CheckoutDto,
-  ): Promise<OrderModel> {
-    let basket: any
-    if (userId) {
-      basket = await this.basketService.getOrCreateUserBasket(userId)
-    } else if (sessionId) {
-      basket = await this.basketService.getOrCreateGuestBasket(sessionId)
-    } else {
-      throw new BadRequestException('No session or user provided')
-    }
-
+    dto: CreateCheckoutDto,
+  ): Promise<CreatePaymentResult> {
+    const basket = await this.resolveBasket(userId, sessionId)
     if (!basket.items || basket.items.length === 0) {
       throw new BadRequestException('Basket is empty')
     }
+    await this.validateStock(basket.items)
 
-    // Validate stock before payment
+    const subtotal = basket.items.reduce(
+      (acc: number, i: any) => acc + i.unitPrice * i.quantity,
+      0,
+    )
+    const total = subtotal + this.getDeliveryCost(dto.deliveryMethod)
+
+    const receipt = `rcpt_${Date.now()}`
+    const order = await this.paymentsService.createOrder(total, receipt)
+
+    const name = [dto.firstName, dto.lastName].filter(Boolean).join(' ').trim()
+    return {
+      ...order,
+      prefill: {
+        name: name || '',
+        email: dto.email ?? '',
+        contact: dto.phone ?? '',
+      },
+    }
+  }
+
+  /** Step 2: verify Razorpay signature, then create the DB order + clear basket + email. */
+  async verifyAndCreateOrder(
+    userId: string | null,
+    sessionId: string | null,
+    dto: VerifyCheckoutDto,
+  ): Promise<OrderModel> {
+    this.paymentsService.verifySignature(
+      dto.razorpayOrderId,
+      dto.razorpayPaymentId,
+      dto.razorpaySignature,
+    )
+
+    const basket = await this.resolveBasket(userId, sessionId)
+    if (!basket.items || basket.items.length === 0) {
+      throw new BadRequestException('Basket is empty')
+    }
     await this.validateStock(basket.items)
 
     const deliveryCost = this.getDeliveryCost(dto.deliveryMethod)
 
-    // Process payment
-    const paymentResult = await this.paymentsService.charge({
-      cardNumber: dto.cardNumber,
-      expiry: dto.expiry,
-      cvc: dto.cvc,
-    })
-
-    if (paymentResult.status === 'failed') {
-      throw new BadRequestException(paymentResult.message ?? 'Payment failed')
-    }
-
-    // Snapshot basket items
     const basketItems = basket.items.map((item: any) => ({
       productId: item.productId,
       variantId: item.variantId,
@@ -70,7 +92,6 @@ export class CheckoutService {
       unitPrice: item.unitPrice,
     }))
 
-    // Create order
     const order = await this.ordersService.createFromBasket(
       userId,
       dto.email ?? null,
@@ -83,17 +104,15 @@ export class CheckoutService {
         firstName: dto.firstName ?? null,
         lastName: dto.lastName ?? null,
         phone: dto.phone ?? null,
-        country: 'GB',
+        country: 'IN',
       },
       dto.deliveryMethod,
       deliveryCost,
-      paymentResult.paymentIntentId,
+      dto.razorpayPaymentId,
     )
 
-    // Clear basket
     await this.basketService.clearBasket(basket.id)
 
-    // Send confirmation email
     const recipientEmail =
       dto.email ?? (userId ? (await this.usersService.findById(userId)).email : null)
     if (recipientEmail) {
@@ -108,14 +127,24 @@ export class CheckoutService {
     return order
   }
 
+  private async resolveBasket(userId: string | null, sessionId: string | null): Promise<any> {
+    if (userId) {
+      return this.basketService.getOrCreateUserBasket(userId)
+    }
+    if (sessionId) {
+      return this.basketService.getOrCreateGuestBasket(sessionId)
+    }
+    throw new BadRequestException('No session or user provided')
+  }
+
   private getDeliveryCost(method: string): number {
     switch (method) {
       case 'next_day':
-        return 695 // £6.95
+        return 9900 // ₹99
       case 'click_collect':
         return 0
       default:
-        return 395 // £3.95 standard
+        return 4900 // ₹49 standard
     }
   }
 

@@ -68,8 +68,8 @@ const Category: React.FC = () => {
           className="w-full accent-argos-red"
         />
         <div className="flex justify-between text-xs text-argos-gray mt-1">
-          <span>£0</span>
-          <span className="font-bold text-argos-charcoal">Up to £{maxPrice}</span>
+          <span>₹0</span>
+          <span className="font-bold text-argos-charcoal">Up to ₹{maxPrice}</span>
         </div>
       </div>
 

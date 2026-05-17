@@ -7,7 +7,6 @@ import { toast } from 'sonner'
 import InputField from '@/components/Form/InputField'
 import PasswordField from '@/components/Form/PasswordField'
 import Checkbox from '@/components/Form/Checkbox'
-import Button from '@/components/Common/Button/Button'
 import { useRegisterMutation } from '@/services/authApi'
 import { setAuth, setAuthError } from '@/features/auth/authSlice'
 import { useAppDispatch } from '@/app/store'
@@ -86,7 +85,7 @@ export function RegisterForm() {
   })
 
   return (
-    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+    <form onSubmit={onSubmit} noValidate className="flex flex-col gap-5">
       {serverError && (
         <div
           role="alert"
@@ -99,34 +98,32 @@ export function RegisterForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <InputField
           label="First name"
+          autoComplete="given-name"
           registration={register('firstName')}
           error={errors.firstName}
-          required
         />
         <InputField
           label="Last name"
+          autoComplete="family-name"
           registration={register('lastName')}
           error={errors.lastName}
-          required
         />
       </div>
 
       <InputField
         label="Email address"
         type="email"
-        placeholder="you@example.com"
+        autoComplete="email"
         registration={register('email')}
         error={errors.email}
-        required
       />
 
-      <div className="space-y-1.5">
+      <div className="space-y-2">
         <PasswordField
           label="Password"
           autoComplete="new-password"
           registration={register('password')}
           error={errors.password}
-          required
           hint="At least 8 characters, including a letter and a number."
         />
         {password.length > 0 && (
@@ -173,9 +170,13 @@ export function RegisterForm() {
         error={errors.termsAccepted}
       />
 
-      <Button type="submit" variant="primary" size="full" loading={isLoading}>
-        Create account
-      </Button>
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="w-full h-12 rounded bg-argos-green hover:bg-argos-green-dark active:bg-argos-green-dark text-white text-base font-bold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-argos-green focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {isLoading ? 'Creating account…' : 'Create account'}
+      </button>
     </form>
   )
 }

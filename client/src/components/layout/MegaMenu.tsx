@@ -31,7 +31,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   'gifts-and-occasions': Gift,
 }
 
-export function MegaMenu({ categories, onClose, topOffset = 88 }: MegaMenuProps) {
+export function MegaMenu({ categories, onClose, topOffset = 65 }: MegaMenuProps) {
   const [activeId, setActiveId] = useState<string | null>(categories[0]?.id ?? null)
   const panelRef = useRef<HTMLDivElement>(null)
 

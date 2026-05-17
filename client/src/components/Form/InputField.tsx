@@ -10,8 +10,15 @@ interface Props {
   placeholder?: string
   className?: string
   required?: boolean
+  autoComplete?: string
+  hint?: string
 }
 
+/**
+ * Matches the Argos login form field: bold label above, ~48px tall input,
+ * generous padding, gray border, blue focus ring. No red asterisk on Argos —
+ * required state is implicit.
+ */
 const InputField: React.FC<Props> = ({
   label,
   registration,
@@ -19,24 +26,32 @@ const InputField: React.FC<Props> = ({
   type = 'text',
   placeholder,
   className,
-  required,
-}) => (
-  <div className={cn('flex flex-col gap-1', className)}>
-    <label className="text-sm font-bold text-argos-charcoal">
-      {label}
-      {required && <span className="text-argos-red ml-0.5">*</span>}
-    </label>
-    <input
-      {...registration}
-      type={type}
-      placeholder={placeholder}
-      className={cn(
-        'w-full border rounded px-3 py-2.5 text-sm text-argos-charcoal placeholder-argos-gray-mid focus:outline-none focus:ring-2 focus:ring-argos-blue transition-shadow',
-        error ? 'border-argos-red bg-red-50' : 'border-argos-gray-light hover:border-argos-gray',
-      )}
-    />
-    {error && <p className="text-xs text-argos-red mt-0.5">{error.message}</p>}
-  </div>
-)
+  autoComplete,
+  hint,
+}) => {
+  const fieldId = `in-${registration.name}`
+  return (
+    <div className={cn('flex flex-col gap-1.5', className)}>
+      <label htmlFor={fieldId} className="text-sm font-bold text-argos-charcoal">
+        {label}
+      </label>
+      <input
+        {...registration}
+        id={fieldId}
+        type={type}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        aria-invalid={!!error}
+        className={cn(
+          'w-full h-12 border rounded px-3 text-base text-argos-charcoal placeholder-argos-gray-mid bg-white transition-colors',
+          'focus:outline-none focus:border-argos-blue focus:ring-1 focus:ring-argos-blue',
+          error ? 'border-argos-red bg-red-50' : 'border-argos-gray-light hover:border-argos-gray',
+        )}
+      />
+      {error && <p className="text-xs text-argos-red">{error.message}</p>}
+      {!error && hint && <p className="text-xs text-argos-gray">{hint}</p>}
+    </div>
+  )
+}
 
 export default InputField

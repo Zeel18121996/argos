@@ -1,12 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap');
+/* Argos's live CSS for <header> uses:
+     font-family: Barlow, ArgosBook, sans-serif;
+   Mirroring their exact stack. Barlow is free on Google Fonts; `ArgosBook` is
+   their internal font name that resolves to the system default if not present,
+   then we fall back to Helvetica/Arial. */
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 @theme {
   /* Breakpoints */
   --breakpoint-sm: 480px;
 
-  /* Font family */
-  --font-sans: Barlow, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* Font family — same stack as argos.co.uk */
+  --font-sans: Barlow, ArgosBook, "Helvetica Neue", Helvetica, Arial, sans-serif;
 
   /* Text sizes */
   --text-2xs: 0.625rem;
@@ -22,7 +27,7 @@
   --shadow-header: 0 2px 8px rgba(0,0,0,0.12);
   --shadow-card-hover: 0 4px 16px rgba(0,0,0,0.16);
 
-  /* Argos Brand Colors */
+  /* Argos Brand Colors — matching real argos.co.uk */
   --color-argos-green: #028940;
   --color-argos-green-dark: #016e33;
   --color-argos-green-light: #E8F5EE;
@@ -32,8 +37,8 @@
   --color-argos-blue-light: #E8F0FB;
   --color-argos-blue-promo: #3860BE;
 
-  --color-argos-red: #CC0000;
-  --color-argos-red-dark: #AA0000;
+  --color-argos-red: #D42114;
+  --color-argos-red-dark: #B31B10;
   --color-argos-red-light: #fde8e9;
 
   --color-argos-amber: #FFB800;
@@ -90,9 +95,9 @@ html {
 
 body {
   margin: 0;
-  font-family: Barlow, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: Barlow, ArgosBook, "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: 16px;
-  color: #262626;
+  color: #333333;
   background-color: #FFFFFF;
   line-height: 1.5;
 }
@@ -112,6 +117,15 @@ body {
   margin-right: auto;
   padding-left: 16px;
   padding-right: 16px;
+}
+
+/* Hero banner wrapper — same max-width as page-container but NO horizontal padding.
+   Matches argos.co.uk which constrains the carousel to ~1400px centered. */
+.hero-slider-wrap {
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Focus ring */
@@ -174,23 +188,57 @@ body {
   animation-play-state: paused;
 }
 
-/* ── Swiper customization ── */
+/* ── Swiper customization — mirrors Argos's Fable .ds-c-slides spec ── */
+
+/* Prev / Next buttons (Argos: .ds-c-slides__previous-button / __next-button)
+   - Absolute positioned at left/right, 8px from edge
+   - Round white circle with subtle shadow `0 1px 8px 0 #00000029`
+   - Icon is dark grey, button is z-10 above the slide */
 .swiper-button-next,
 .swiper-button-prev {
-  color: #262626 !important;
-  background: rgba(255,255,255,0.95);
-  border-radius: 50%;
-  width: 36px !important;
-  height: 36px !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  color: #333333 !important;
+  background: #ffffff;
+  border-radius: 9999px;
+  width: 44px !important;
+  height: 44px !important;
+  box-shadow: 0 1px 8px 0 rgba(0, 0, 0, 0.16);
+  z-index: 10;
+  margin-top: 0 !important;
+  top: 50%;
+  transform: translateY(-50%);
 }
+.swiper-button-next { right: 8px; }
+.swiper-button-prev { left: 8px; }
 .swiper-button-next::after,
 .swiper-button-prev::after {
-  font-size: 13px !important;
+  font-size: 14px !important;
   font-weight: 700;
 }
+.swiper-button-disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Pagination dots (Argos: .ds-c-slides__controls-dots / __controls-dot-indicator)
+   - Default dot: 12×12 round, #d8d8d8
+   - Active dot: 32px-wide pill, #044C99 (argos-blue — equivalent of Fable #1976d2)
+   - Smooth 300ms linear transition between states */
+.swiper-pagination {
+  bottom: 12px !important;
+}
+.swiper-pagination-bullet {
+  width: 12px !important;
+  height: 12px !important;
+  background: #d8d8d8 !important;
+  opacity: 1 !important;
+  border-radius: 9999px !important;
+  margin: 0 4px !important;
+  transition: all 0.3s linear;
+}
 .swiper-pagination-bullet-active {
-  background: #028940 !important;
+  background: #044C99 !important;
+  width: 32px !important;
+  border-radius: 9999px !important;
 }
 
 /* ── Category icon carousel (no scrollbar) ── */

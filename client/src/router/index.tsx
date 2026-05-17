@@ -16,6 +16,8 @@ const OrderConfirmationPage = lazy(() => import('@/pages/OrderConfirmationPage')
 const OrderTrackingPage = lazy(() => import('@/pages/OrderTrackingPage'))
 const LoginPage = lazy(() => import('@/pages/LoginPage'))
 const RegisterPage = lazy(() => import('@/pages/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('@/pages/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('@/pages/ResetPasswordPage'))
 const AccountDashboardPage = lazy(() => import('@/pages/AccountDashboardPage'))
 const AccountOrdersPage = lazy(() => import('@/pages/AccountOrdersPage'))
 const AccountOrderDetailPage = lazy(() => import('@/pages/AccountOrderDetailPage'))
@@ -102,22 +104,8 @@ const router = createBrowserRouter([
       // ── Auth (public — also accepts ?successUrl=/path for redirects) ─────
       { path: 'auth/login', element: wrap(LoginPage) },
       { path: 'auth/register', element: wrap(RegisterPage) },
-      {
-        path: 'auth/forgot-password',
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <ComingSoon page="Forgot password" />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'auth/reset-password',
-        element: (
-          <Suspense fallback={<PageLoader />}>
-            <ComingSoon page="Reset password" />
-          </Suspense>
-        ),
-      },
+      { path: 'auth/forgot-password', element: wrap(ForgotPasswordPage) },
+      { path: 'auth/reset-password', element: wrap(ResetPasswordPage) },
 
       // ── Checkout (protected) ────────────────────────────────────────────
       { path: 'checkout', element: protectedWrap(CheckoutPage) },

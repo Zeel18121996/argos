@@ -79,7 +79,7 @@ export class EmailService {
         '',
         'This link expires in 1 hour. If you did not request a reset, ignore this email.',
         '',
-        '— Argos Clone',
+        '— Argos',
       ].join('\n'),
     })
   }
@@ -90,12 +90,12 @@ export class EmailService {
     total: number,
     itemCount: number,
   ): Promise<void> {
-    const totalStr = `£${(total / 100).toFixed(2)}`
+    const totalStr = `Rs${(total / 100).toFixed(2)}`
     await this.send({
       to,
       subject: `Order confirmed — ${orderNumber}`,
       text: [
-        'Thank you for your order!',
+        'Thank you for your order at Argos!',
         '',
         `Order number: ${orderNumber}`,
         `Items: ${itemCount}`,
@@ -103,7 +103,7 @@ export class EmailService {
         '',
         'You can track your order at: http://localhost:3000/order/tracking',
         '',
-        '— Argos Clone',
+        '— Argos',
       ].join('\n'),
     })
   }

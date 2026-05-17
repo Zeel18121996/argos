@@ -1,11 +1,11 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Swiper, SwiperSlide } from 'swiper/react'
-import { Autoplay, Pagination, Navigation } from 'swiper/modules'
+import { Autoplay, Navigation } from 'swiper/modules'
 import 'swiper/css'
-import 'swiper/css/pagination'
 import 'swiper/css/navigation'
 import {
+  ChevronLeft,
   ChevronRight,
   Truck,
   RotateCcw,
@@ -313,7 +313,7 @@ function EditorialCard({
 function ArgosPayHeroSlide({ slide }: { slide: HeroSlide }) {
   return (
     <div
-      className="relative h-[300px] sm:h-[340px] md:h-[400px] lg:h-[440px] overflow-hidden"
+      className="relative h-[280px] sm:h-[360px] md:h-[420px] lg:h-[460px] overflow-hidden"
       style={{ backgroundColor: slide.accent }}
     >
       {/* Diagonal lighter-red stripe — purely decorative */}
@@ -327,8 +327,8 @@ function ArgosPayHeroSlide({ slide }: { slide: HeroSlide }) {
       />
       <div className="relative page-container h-full">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_minmax(180px,220px)] gap-4 h-full items-center">
-          {/* Left: headline + Argos Pay CTA */}
-          <div className="pl-4 sm:pl-6 lg:pl-12 py-6">
+          {/* Left: headline + Argos Pay CTA — even padding via page-container */}
+          <div className="py-6">
             <h2 className="text-[28px] sm:text-[34px] md:text-[40px] font-bold text-argos-red leading-[1.1] mb-3">
               {slide.title}
             </h2>
@@ -358,7 +358,7 @@ function ArgosPayHeroSlide({ slide }: { slide: HeroSlide }) {
           </div>
 
           {/* Right: secondary product list with "From £X.XX pm*" */}
-          <div className="hidden lg:flex flex-col justify-center gap-4 pr-6 text-white">
+          <div className="hidden lg:flex flex-col justify-center gap-4 text-white">
             {slide.products?.slice(0, 3).map((p) => (
               <div key={p.name}>
                 <p className="text-[12px] font-bold leading-tight line-clamp-2">{p.name}</p>
@@ -378,13 +378,16 @@ export default function HomePage() {
   const { data: newProducts = [], isLoading: newLoading } = useGetNewProductsQuery()
   const { data: featuredProducts = [], isLoading: featuredLoading } = useGetFeaturedProductsQuery()
   const storeInputRef = useRef<HTMLInputElement>(null)
+  // Hero carousel state — Argos-style bottom-center navigation
+  const heroSwiperRef = useRef<any>(null)
+  const [heroActiveIndex, setHeroActiveIndex] = useState(0)
 
   return (
     <div className="bg-white">
       {/* Category icon scroll — pinned promo tiles first, then "Just for you",
           then dynamic categories. Tiles are rounded SQUARES (matches Argos),
           horizontally spaced with a generous gap. */}
-      <div className="border-b border-argos-gray-200 bg-white">
+      <div className="bg-white">
         <div className="page-container py-8">
           <div className="cat-scroll items-start" style={{ gap: '20px' }}>
             {/* Pinned promo tiles (Argos Pay, Top 100 deals) */}
@@ -445,47 +448,83 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Hero Carousel — Argos-Pay slide first, then image slides */}
-      <Swiper
-        modules={[Autoplay, Pagination, Navigation]}
-        autoplay={{ delay: 6000, disableOnInteraction: false }}
-        pagination={{ clickable: true }}
-        navigation
-        loop
-        className="w-full"
-      >
-        {HERO_SLIDES.map((slide) => (
-          <SwiperSlide key={slide.id}>
-            {slide.variant === 'argos-pay' ? (
-              <ArgosPayHeroSlide slide={slide} />
-            ) : (
-              <div className="relative h-52 sm:h-72 md:h-[340px] lg:h-[400px] overflow-hidden bg-argos-gray-bg">
-                <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-                <div className="absolute inset-0 flex items-center">
-                  <div className="page-container">
-                    <div className="max-w-md">
-                      <h2 className="text-2xl md:text-[42px] font-bold text-white mb-2 leading-tight tracking-tight">
-                        {slide.title}
-                      </h2>
-                      <p className="text-white/90 text-sm md:text-base mb-5 font-normal">
-                        {slide.subtitle}
-                      </p>
-                      <Link
-                        to={slide.ctaLink}
-                        className="inline-block text-white font-bold text-sm px-6 py-3 rounded-sm hover:brightness-110 transition-all"
-                        style={{ backgroundColor: slide.accent }}
-                      >
-                        {slide.cta}
-                      </Link>
+      {/* Hero Carousel — constrained to page-container width (matches argos.co.uk) */}
+      <div className="hero-slider-wrap px-4">
+        <div className="overflow-hidden rounded-2xl">
+        <Swiper
+          modules={[Autoplay]}
+          autoplay={{ delay: 6000, disableOnInteraction: false }}
+          loop
+          onSwiper={(s) => { heroSwiperRef.current = s }}
+          onSlideChange={(s) => { setHeroActiveIndex(s.realIndex) }}
+          className="w-full"
+        >
+          {HERO_SLIDES.map((slide) => (
+            <SwiperSlide key={slide.id}>
+              {slide.variant === 'argos-pay' ? (
+                <ArgosPayHeroSlide slide={slide} />
+              ) : (
+                <div className="relative h-[280px] sm:h-[360px] md:h-[420px] lg:h-[460px] overflow-hidden bg-argos-gray-bg">
+                  <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="page-container">
+                      <div className="max-w-md">
+                        <h2 className="text-2xl md:text-[42px] font-bold text-white mb-2 leading-tight tracking-tight">
+                          {slide.title}
+                        </h2>
+                        <p className="text-white/90 text-sm md:text-base mb-5 font-normal">
+                          {slide.subtitle}
+                        </p>
+                        <Link
+                          to={slide.ctaLink}
+                          className="inline-block text-white font-bold text-sm px-6 py-3 rounded-sm hover:brightness-110 transition-all"
+                          style={{ backgroundColor: slide.accent }}
+                        >
+                          {slide.cta}
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </SwiperSlide>
-        ))}
-      </Swiper>
+              )}
+            </SwiperSlide>
+          ))}
+        </Swiper>
+        </div>
+
+        {/* Argos-style bottom controls: ← dots → (centered, below the slide) */}
+        <div className="flex items-center justify-center gap-3 py-2.5 bg-white">
+          <button
+            onClick={() => heroSwiperRef.current?.slidePrev()}
+            className="w-8 h-8 rounded-full bg-white border border-argos-gray-200 flex items-center justify-center hover:bg-argos-gray-50 transition-colors shrink-0"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft size={14} className="text-argos-charcoal" />
+          </button>
+
+          {HERO_SLIDES.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => heroSwiperRef.current?.slideToLoop(i)}
+              aria-label={`Go to slide ${i + 1}`}
+              className={`transition-all duration-300 rounded-full h-3 ${
+                i === heroActiveIndex
+                  ? 'w-8 bg-argos-blue'
+                  : 'w-3 bg-argos-gray-300 hover:bg-argos-gray-400'
+              }`}
+            />
+          ))}
+
+          <button
+            onClick={() => heroSwiperRef.current?.slideNext()}
+            className="w-8 h-8 rounded-full bg-white border border-argos-gray-200 flex items-center justify-center hover:bg-argos-gray-50 transition-colors shrink-0"
+            aria-label="Next slide"
+          >
+            <ChevronRight size={14} className="text-argos-charcoal" />
+          </button>
+        </div>
+      </div>
 
       {/* Seasonal inspiration */}
       <div className="page-container pt-8 mb-4">

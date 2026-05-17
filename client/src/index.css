@@ -119,6 +119,15 @@ body {
   padding-right: 16px;
 }
 
+/* Hero banner wrapper — same max-width as page-container but NO horizontal padding.
+   Matches argos.co.uk which constrains the carousel to ~1400px centered. */
+.hero-slider-wrap {
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Focus ring */
 @layer utilities {
   .focus-ring:focus-visible {

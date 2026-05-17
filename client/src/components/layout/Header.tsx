@@ -623,7 +623,7 @@ export function Header() {
           ._3-aaF: border-bottom:1px solid #ccc; width:100%
           ._1ni9g: max-width 1920px; centered; responsive padding 10/15/16;
                    height 93px at ≥1324px. */}
-        <div className="border-b border-[#cccccc] w-full">
+        <div className="">
           <div className="flex flex-row flex-wrap items-center w-full max-w-[1920px] mx-auto min-w-[320px] p-[10px] md:p-[15px] xl:p-4 xl:h-[93px]">
             {/* Hamburger — mobile only */}
             <button
@@ -655,7 +655,7 @@ export function Header() {
         {/* ── Promo strip ───────────────────────────────────────────────── */}
         <PromoStrip />
       </header>
-
+  <div className="border-b border-[#cccccc] w-full" ></div>
       {/* MegaMenu — positioned dynamically below real header */}
       {isMegaMenuOpen && (
         <MegaMenu categories={categories} onClose={closeMegaMenu} topOffset={headerHeight} />

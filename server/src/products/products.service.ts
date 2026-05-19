@@ -290,7 +290,8 @@ export class ProductsService {
     } else if (query.categoryId) {
       where.categoryId = query.categoryId
     }
-    if (query.slug) where.slug = query.slug
+    if (query.slugs?.length) where.slug = { [Op.in]: query.slugs }
+    else if (query.slug) where.slug = query.slug
     if (query.brands?.length) where.brand = { [Op.in]: query.brands }
     if (query.minPrice !== undefined) {
       where.price = { ...(where.price || {}), [Op.gte]: query.minPrice }

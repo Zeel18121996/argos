@@ -507,7 +507,7 @@ function PromoStrip() {
     },
   ]
   return (
-    <div className="hidden md:block border-t border-argos-gray-200 bg-white">
+    <div className="hidden md:block border-argos-gray-200 bg-white">
       <ul
         className="argos-propbar text-argos-charcoal px-4 lg:px-6"
         style={{

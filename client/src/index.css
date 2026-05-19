@@ -195,6 +195,20 @@ body {
 
 /* ── Swiper customization ─────────────────────────────────────────────── */
 
+/* Product-card Swiper: all slides in a row stretch to the tallest card.
+   This keeps title / rating / price / button vertically aligned across cards. */
+.swiper-product-cards .swiper-wrapper {
+  align-items: stretch;
+}
+.swiper-product-cards .swiper-slide {
+  height: auto;   /* override Swiper's default fixed height */
+  display: flex;
+  flex-direction: column;
+}
+.swiper-product-cards .swiper-slide > * {
+  flex: 1;         /* card link fills the full slide height */
+}
+
 /* Prev / Next buttons */
 .swiper-button-next,
 .swiper-button-prev {

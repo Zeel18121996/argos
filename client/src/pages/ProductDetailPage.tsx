@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed'
 import { useGetProductBySlugQuery } from '@/services/productsApi'
 import {
   ChevronRight,
@@ -36,6 +37,12 @@ export default function ProductDetailPage() {
   const { data: wishlistItems = [] } = useGetWishlistQuery()
   const [addWishlist] = useAddWishlistItemMutation()
   const [removeWishlist] = useRemoveWishlistItemMutation()
+  const { addSlug } = useRecentlyViewed()
+
+  // Record this product as recently viewed as soon as it loads.
+  useEffect(() => {
+    if (product?.slug) addSlug(product.slug)
+  }, [product?.slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
     return (

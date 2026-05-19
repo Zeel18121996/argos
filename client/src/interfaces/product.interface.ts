@@ -83,6 +83,8 @@ export interface ProductListParams {
   isNew?: boolean
   isFeatured?: boolean
   isClearance?: boolean
+  /** Fetch a specific set of products by slug (used for recently viewed). */
+  slugs?: string
 }
 
 export interface PaginationMeta {

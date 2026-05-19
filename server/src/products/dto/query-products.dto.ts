@@ -66,6 +66,19 @@ export class QueryProductsDto {
         .filter(Boolean)
     return value
   })
+  slugs?: string[]
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => {
+    if (typeof value === 'string')
+      return value
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+    return value
+  })
   brands?: string[]
 
   @IsOptional()

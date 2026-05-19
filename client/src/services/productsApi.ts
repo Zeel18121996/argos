@@ -58,6 +58,19 @@ export const productsApi = baseApi.injectEndpoints({
       transformResponse: (response: ProductListResponse) => response.items,
       providesTags: [{ type: 'Product', id: 'SALE' }],
     }),
+
+    /** Fetch a set of products by slug — used for "Pick up where you left off". */
+    getProductsBySlugs: builder.query<Product[], string[]>({
+      query: (slugs) => ({
+        url: '/products',
+        params: { slugs: slugs.join(','), limit: slugs.length },
+      }),
+      transformResponse: (response: ProductListResponse) => response.items,
+      providesTags: (result) =>
+        result
+          ? result.map(({ id }) => ({ type: 'Product' as const, id }))
+          : [{ type: 'Product', id: 'LIST' }],
+    }),
   }),
 })
 
@@ -67,4 +80,5 @@ export const {
   useGetFeaturedProductsQuery,
   useGetNewProductsQuery,
   useGetSaleProductsQuery,
+  useGetProductsBySlugsQuery,
 } = productsApi

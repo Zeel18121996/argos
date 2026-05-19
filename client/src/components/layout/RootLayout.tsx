@@ -25,7 +25,7 @@ export function RootLayout() {
       </a>
 
       <Header />
-      <main id="main-content" className="flex-1">
+      <main id="main-content" className="flex-1 border-t border-argos-gray-200">
         <Outlet />
       </main>
       <Footer />

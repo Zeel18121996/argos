@@ -24,7 +24,8 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useGetCategoriesQuery } from '@/services/categoriesApi'
-import { useGetProductsQuery } from '@/services/productsApi'
+import { useGetProductsQuery, useGetProductsBySlugsQuery } from '@/services/productsApi'
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed'
 import ProductCard from '@/components/Common/ProductCard/ProductCard'
 import { cn } from '@/utils/cn'
 import { resolveImageUrl } from '@/utils/imageUrl'
@@ -274,6 +275,17 @@ export default function HomePage() {
   const { data: categories = [] } = useGetCategoriesQuery()
   const { data: productsResponse, isLoading: productsLoading } = useGetProductsQuery({ limit: 24 })
   const products = productsResponse?.items ?? []
+
+  // Recently viewed — loaded from localStorage, then fetched from the API
+  const { slugs: recentSlugs } = useRecentlyViewed()
+  const { data: recentProducts = [], isLoading: recentLoading } = useGetProductsBySlugsQuery(
+    recentSlugs,
+    { skip: recentSlugs.length === 0 },
+  )
+  // Re-sort API results to match the localStorage order (most recently viewed first).
+  const sortedRecentProducts = recentSlugs
+    .map((slug) => recentProducts.find((p) => p.slug === slug))
+    .filter(Boolean) as typeof recentProducts
   const heroSwiperRef = useRef<SwiperClass | null>(null)
   const [heroActiveIndex, setHeroActiveIndex] = useState(0)
   const reduceMotion = usePrefersReducedMotion()
@@ -514,6 +526,53 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ── Pick up where you left off ───────────────────────────────── */}
+      {(recentLoading || sortedRecentProducts.length > 0) && (
+        <div className="bg-white border-t border-argos-border">
+          <div className="page-container py-8">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-[26px] font-bold text-argos-dark leading-normal">
+                Pick up where you left off
+              </h2>
+              <Link
+                to="/browse"
+                className="flex items-center gap-1 text-[16px] font-normal text-argos-blue hover:underline"
+              >
+                See all <ChevronRight size={14} aria-hidden="true" />
+              </Link>
+            </div>
+
+            {recentLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="bg-gray-200 aspect-square rounded animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <Swiper
+                modules={[Navigation]}
+                navigation
+                slidesPerView={2}
+                spaceBetween={16}
+                className="swiper-product-cards"
+                breakpoints={{
+                  480: { slidesPerView: 3 },
+                  768: { slidesPerView: 4 },
+                  1024: { slidesPerView: 5 },
+                  1280: { slidesPerView: 6 },
+                }}
+              >
+                {sortedRecentProducts.map((product) => (
+                  <SwiperSlide key={product.id}>
+                    <ProductCard product={product} />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Products */}
       <div className="page-container py-8">
         <div className="flex items-center justify-between mb-4">
@@ -529,7 +588,8 @@ export default function HomePage() {
           modules={[Navigation]}
           navigation
           slidesPerView={2}
-          spaceBetween={12}
+          spaceBetween={16}
+          className="swiper-product-cards"
           breakpoints={{
             480: { slidesPerView: 3 },
             768: { slidesPerView: 4 },

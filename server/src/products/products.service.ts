@@ -27,6 +27,7 @@ export interface ProductListItem {
   isNew: boolean
   isOnOffer: boolean
   isClearance: boolean
+  isActive: boolean
   categoryId: string
   categorySlug: string
   categoryName: string
@@ -75,6 +76,7 @@ function toListItem(product: ProductModel): ProductListItem {
     isNew: product.isNew,
     isOnOffer: product.isOnOffer,
     isClearance: product.isClearance,
+    isActive: product.isActive,
     categoryId: product.categoryId,
     categorySlug: category?.slug ?? '',
     categoryName: category?.name ?? '',
@@ -145,9 +147,7 @@ export class ProductsService {
     if (query.sortBy === ProductSort.popular) {
       ;(whereClause as any)[Op.and] = [
         ...(((whereClause as any)[Op.and] as unknown[]) ?? []),
-        literal(
-          'EXISTS (SELECT 1 FROM order_items oi WHERE oi.product_id = "ProductModel"."id")',
-        ),
+        literal('EXISTS (SELECT 1 FROM order_items oi WHERE oi.product_id = "ProductModel"."id")'),
       ]
     }
 

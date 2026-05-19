@@ -17,10 +17,14 @@ interface AuthState {
   error: string | null
 }
 
+// status starts as 'loading' because AuthBootstrapper always attempts a
+// /auth/refresh on app boot. ProtectedRoute / StaffRoute check this so they
+// show a spinner on the first render instead of evaluating against an empty
+// auth state and redirecting to /auth/login.
 const initialState: AuthState = {
   user: null,
   accessToken: null,
-  status: 'idle',
+  status: 'loading',
   error: null,
 }
 

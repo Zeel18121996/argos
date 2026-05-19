@@ -86,17 +86,84 @@ function protectedWrap(Component: React.LazyExoticComponent<() => ReactElement>)
   )
 }
 
-function adminWrap(Component: React.LazyExoticComponent<() => ReactElement>) {
-  return (
-    <StaffRoute>
-      <Suspense fallback={<PageLoader />}>
-        <Component />
-      </Suspense>
-    </StaffRoute>
-  )
-}
-
 const router = createBrowserRouter([
+  // ── Admin (staff/admin only, standalone shell — NO customer header/footer) ──
+  {
+    path: '/admin',
+    element: (
+      <StaffRoute>
+        <AdminLayout />
+      </StaffRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AdminDashboardPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'dashboard',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AdminDashboardPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'products',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AdminProductsPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'products/new',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AdminProductFormPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'products/:id/edit',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AdminProductFormPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'orders',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AdminOrdersPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'customers',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AdminCustomersPage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'categories',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AdminCategoriesPage />
+          </Suspense>
+        ),
+      },
+    ],
+  },
+
+  // ── Customer storefront ─────────────────────────────────────────────────
   {
     element: <RootLayout />,
     children: [
@@ -142,82 +209,6 @@ const router = createBrowserRouter([
       { path: 'account/orders/:id', element: protectedWrap(AccountOrderDetailPage) },
       { path: 'account/wishlist', element: protectedWrap(WishlistPage) },
       { path: 'account/profile', element: protectedWrap(ProfilePage) },
-
-      // ── Admin (staff/admin only) ────────────────
-      {
-        path: 'admin',
-        element: (
-          <StaffRoute>
-            <AdminLayout />
-          </StaffRoute>
-        ),
-        children: [
-          {
-            index: true,
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminDashboardPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'dashboard',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminDashboardPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'products',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminProductsPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'products/new',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminProductFormPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'products/:id/edit',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminProductFormPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'orders',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminOrdersPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'customers',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminCustomersPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'categories',
-            element: (
-              <Suspense fallback={<PageLoader />}>
-                <AdminCategoriesPage />
-              </Suspense>
-            ),
-          },
-        ],
-      },
 
       // ── 404 ─────────────────────────────────────────────────────────────
       { path: '*', element: wrap(NotFoundPage) },

@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import {
   useGetAdminProductsQuery,
   useDeleteAdminProductMutation,
+  useUpdateAdminProductMutation,
 } from '@/services/adminProductsApi'
+import { toast } from 'sonner'
 import { useGetCategoriesQuery } from '@/services/categoriesApi'
 import { formatPriceFromPounds } from '@/utils/format'
 import { Search, Plus, ChevronDown, ChevronUp, MoreHorizontal } from 'lucide-react'
@@ -24,7 +26,9 @@ export default function AdminProductsPage() {
     sortBy,
   })
 
-  const [deleteProduct] = useDeleteAdminProductMutation()
+  const [deleteProduct, { isLoading: isDeactivating }] = useDeleteAdminProductMutation()
+  const [updateProduct, { isLoading: isActivating }] = useUpdateAdminProductMutation()
+  const isTogglingStatus = isDeactivating || isActivating
 
   const { data: categories = [] } = useGetCategoriesQuery()
 
@@ -167,21 +171,48 @@ export default function AdminProductsPage() {
                         <button className="p-1 rounded hover:bg-argos-gray-bg">
                           <MoreHorizontal size={16} className="text-argos-gray" />
                         </button>
-                        <div className="absolute right-0 top-full z-20 hidden group-hover:block bg-white border border-argos-border rounded shadow-lg min-w-[140px]">
+                        <div className="absolute right-0 top-full z-20 hidden group-hover:block bg-white border border-argos-border rounded shadow-lg min-w-[160px]">
                           <button
                             onClick={() => navigate(`/admin/products/${p.id}/edit`)}
                             className="w-full text-left px-3 py-2 text-sm hover:bg-argos-gray-bg"
                           >
                             Edit
                           </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`Deactivate "${p.name}"?`)) deleteProduct(p.id)
-                            }}
-                            className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                          >
-                            Deactivate
-                          </button>
+                          {p.isActive ? (
+                            <button
+                              disabled={isTogglingStatus}
+                              onClick={async () => {
+                                if (!confirm(`Deactivate "${p.name}"?`)) return
+                                try {
+                                  await deleteProduct(p.id).unwrap()
+                                  toast.success(`"${p.name}" deactivated`)
+                                } catch {
+                                  toast.error('Could not deactivate product')
+                                }
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-60"
+                            >
+                              Deactivate
+                            </button>
+                          ) : (
+                            <button
+                              disabled={isTogglingStatus}
+                              onClick={async () => {
+                                try {
+                                  await updateProduct({
+                                    id: p.id,
+                                    body: { isActive: true },
+                                  }).unwrap()
+                                  toast.success(`"${p.name}" activated`)
+                                } catch {
+                                  toast.error('Could not activate product')
+                                }
+                              }}
+                              className="w-full text-left px-3 py-2 text-sm text-argos-green hover:bg-argos-green-light disabled:opacity-60"
+                            >
+                              Activate
+                            </button>
+                          )}
                         </div>
                       </div>
                     </td>

@@ -2,7 +2,7 @@ import { useGetDashboardStatsQuery } from '@/services/adminApi'
 import { formatPriceFromPounds } from '@/utils/format'
 import { formatDate } from '@/utils/format'
 import { Link } from 'react-router-dom'
-import { Package, ShoppingCart, PoundSterling, Users, ArrowRight } from 'lucide-react'
+import { Package, ShoppingCart, IndianRupee, Users, ArrowRight } from 'lucide-react'
 
 export default function AdminDashboardPage() {
   const { data: stats, isLoading } = useGetDashboardStatsQuery()
@@ -24,7 +24,7 @@ export default function AdminDashboardPage() {
           value={
             stats?.todayRevenue != null ? formatPriceFromPounds(stats.todayRevenue / 100) : '—'
           }
-          icon={PoundSterling}
+          icon={IndianRupee}
           loading={isLoading}
         />
         <StatCard

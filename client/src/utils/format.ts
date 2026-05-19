@@ -1,19 +1,48 @@
+// ─── Currency / unit primitives ──────────────────────────────────────────────
+//
+// The DB stores prices in **paise** (minor unit of INR, 1/100 of a rupee).
+// Always pass paise to `formatPaise` — let this module handle the conversion.
+// Pre-divided "rupees" arguments are accepted by `formatRupees` for the few
+// call sites that already work in major units (e.g. order summaries computed
+// client-side).
+//
+// Older code uses the names `formatPrice` / `formatPriceFromPounds` — both are
+// kept as aliases below so we don't have to touch ~30 call sites in one go.
+// Prefer the new names in any new code; the old ones are marked @deprecated.
+
 const inrFormatter = new Intl.NumberFormat('en-IN', {
   style: 'currency',
   currency: 'INR',
   maximumFractionDigits: 2,
 })
 
-const formatRupees = (rupees: number): string => {
-  if (rupees % 1 === 0) {
+const formatRupeesInternal = (rupees: number): string => {
+  if (Number.isFinite(rupees) && rupees % 1 === 0) {
     return `₹${rupees.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
   }
   return inrFormatter.format(rupees)
 }
 
-export const formatPrice = (paise: number): string => formatRupees(paise / 100)
+/** Format a minor-unit value (paise) as an INR string. */
+export const formatPaise = (paise: number): string => formatRupeesInternal(paise / 100)
 
-export const formatPriceFromPounds = (rupees: number): string => formatRupees(rupees)
+/** Format a major-unit value (rupees) as an INR string. */
+export const formatRupees = (rupees: number): string => formatRupeesInternal(rupees)
+
+// ─── Backwards-compat aliases ───────────────────────────────────────────────
+// Existing call sites use these. Keep them working; mark deprecated so new
+// code uses the unambiguous names above.
+
+/** @deprecated Use `formatPaise` — same behaviour, clearer name. */
+export const formatPrice = formatPaise
+
+/**
+ * @deprecated Misnamed historical artefact — the function formats rupees,
+ * not pounds. Use `formatRupees` for major units or `formatPaise` for minor.
+ */
+export const formatPriceFromPounds = formatRupees
+
+// ─── Misc formatters (unchanged) ────────────────────────────────────────────
 
 export const formatRating = (rating: number): string => rating.toFixed(1)
 

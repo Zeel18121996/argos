@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Autoplay, Navigation } from 'swiper/modules'
+import type { Swiper as SwiperClass } from 'swiper'
 import 'swiper/css'
 import 'swiper/css/navigation'
 import {
@@ -96,6 +97,7 @@ type PinnedTile = {
   fg: string
   href: string
   badge?: string
+  image?: string
 }
 
 const PINNED_TILES: PinnedTile[] = [
@@ -106,6 +108,7 @@ const PINNED_TILES: PinnedTile[] = [
     fg: '#FFFFFF',
     href: '/help/argos-pay',
     badge: 'Argos\nPay',
+    image: 'https://media.4rgos.it/i/Argos/0925-m052-visualnav-argos-pay',
   },
   {
     id: 'top-100',
@@ -114,6 +117,7 @@ const PINNED_TILES: PinnedTile[] = [
     fg: '#FFFFFF',
     href: '/search?q=top-100-deals',
     badge: 'Top\n100 deals',
+    image: 'https://media.4rgos.it/i/Argos/3925-m052-visualnav-bf-top-100-deal',
   },
 ]
 
@@ -124,6 +128,7 @@ const JUST_FOR_YOU_TILE: PinnedTile = {
   fg: '#044C99',
   href: '/search?q=just-for-you',
   badge: 'Just for\nyou',
+  image: 'https://media.4rgos.it/i/Argos/1825-visualnav-hp-just-for-you',
 }
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -150,10 +155,64 @@ function getCategoryIcon(slug: string): LucideIcon {
   return CATEGORY_ICONS[slug] ?? Sofa
 }
 
+const CATEGORY_IMAGES: Record<string, string> = {
+  'home-and-furniture': 'https://media.4rgos.it/i/Argos/3125-visualnav-hp-sofa-7290411',
+  'home-and-garden': 'https://media.4rgos.it/i/Argos/3125-visualnav-hp-sofa-7290411',
+  'garden-and-diy': 'https://media.4rgos.it/i/Argos/2325-m052-visualnav-garden',
+  technology: 'https://media.4rgos.it/i/Argos/3925-m052-visualnav-3240173',
+  gaming: 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-gaming',
+  toys: 'https://media.4rgos.it/i/Argos/3525-m052-visualnav-7617874-toy',
+  'toys-and-games': 'https://media.4rgos.it/i/Argos/3525-m052-visualnav-7617874-toy',
+  'appliances-and-floorcare': 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-homeappliance',
+  appliances: 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-homeappliance',
+  'health-and-beauty': 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-health-beauty',
+  'tu-clothing': 'https://media.4rgos.it/i/Argos/2325-m052-visualnav-tu',
+  clothing: 'https://media.4rgos.it/i/Argos/2325-m052-visualnav-tu',
+  'sports-and-leisure': 'https://media.4rgos.it/i/Argos/3025-m052-visualnav-sports-liesure',
+  'baby-and-nursery': 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-baby',
+  baby: 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-baby',
+  'jewellery-and-watches': 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-watches',
+  'pet-care': 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-petcare',
+  pets: 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-petcare',
+  'gifts-and-parties': 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-gifting',
+  'gifts-and-occasions': 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-gifting',
+  inspiration: 'https://media.4rgos.it/i/Argos/1225-visualnav-hp-idea',
+  clearance: 'https://media.4rgos.it/i/Argos/2625-m052-visualnav-clearance',
+  diy: 'https://media.4rgos.it/i/Argos/2325-m052-visualnav-garden',
+}
+
+function getCategoryFallbackImage(slug: string): string | undefined {
+  return CATEGORY_IMAGES[slug]
+}
+
+// ── Build srcset for Unsplash-style URLs (paramised image CDN) ─────────────
+function buildSrcSet(url: string | undefined): string | undefined {
+  if (!url) return undefined
+  // Replace any existing &w=NNN with the target widths.
+  const base = url.replace(/&w=\d+/g, '')
+  const join = base.includes('?') ? '&' : '?'
+  return [600, 1000, 1400, 1800]
+    .map((w) => `${base}${join}w=${w} ${w}w`)
+    .join(', ')
+}
+
+// ── Reduced-motion preference hook ─────────────────────────────────────────
+function usePrefersReducedMotion(): boolean {
+  const [prefers, setPrefers] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    setPrefers(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setPrefers(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return prefers
+}
+
 function ArgosPayHeroSlide({ slide }: { slide: HeroSlide }) {
   return (
     <div
-      className="relative h-[280px] sm:h-[360px] md:h-[420px] lg:h-[460px] overflow-hidden"
+      className="relative aspect-[16/7] min-h-[280px] sm:aspect-[16/6] lg:aspect-[16/5] overflow-hidden"
       style={{ backgroundColor: slide.accent }}
     >
       <div
@@ -187,9 +246,12 @@ function ArgosPayHeroSlide({ slide }: { slide: HeroSlide }) {
             {slide.products?.[0] && (
               <img
                 src={slide.products[0].image}
+                srcSet={buildSrcSet(slide.products[0].image)}
+                sizes="(min-width: 1024px) 33vw, 0px"
                 alt={slide.products[0].name}
                 className="max-h-[280px] object-contain"
                 loading="lazy"
+                decoding="async"
               />
             )}
           </div>
@@ -212,76 +274,134 @@ export default function HomePage() {
   const { data: categories = [] } = useGetCategoriesQuery()
   const { data: productsResponse, isLoading: productsLoading } = useGetProductsQuery({ limit: 24 })
   const products = productsResponse?.items ?? []
-  const heroSwiperRef = useRef<any>(null)
+  const heroSwiperRef = useRef<SwiperClass | null>(null)
   const [heroActiveIndex, setHeroActiveIndex] = useState(0)
+  const reduceMotion = usePrefersReducedMotion()
+
+  const catScrollRef = useRef<HTMLDivElement>(null)
+  const [showCatPrev, setShowCatPrev] = useState(false)
+  const [showCatNext, setShowCatNext] = useState(true)
+
+  const updateCatArrows = () => {
+    const el = catScrollRef.current
+    if (!el) return
+    setShowCatPrev(el.scrollLeft > 4)
+    setShowCatNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4)
+  }
+
+  useEffect(() => {
+    updateCatArrows()
+  }, [categories.length])
+
+  const scrollCats = (dir: 'prev' | 'next') => {
+    const el = catScrollRef.current
+    if (!el) return
+    const amount = Math.max(el.clientWidth * 0.75, 320)
+    el.scrollBy({ left: dir === 'next' ? amount : -amount, behavior: 'smooth' })
+  }
 
   return (
     <div className="bg-white">
-      {/* Category icon scroll */}
-      <div className="bg-white">
-        <div className="page-container py-8">
-          <div className="cat-scroll items-start" style={{ gap: '20px' }}>
-            {[...PINNED_TILES, JUST_FOR_YOU_TILE].map((tile) => (
-              <Link
-                key={tile.id}
-                to={tile.href}
-                className="flex flex-col items-center gap-2 flex-shrink-0 group"
-                style={{ minWidth: 100 }}
+      {/* Category icon carousel — argos.co.uk visualnav layout */}
+      <div className="category-carousel-wrapper">
+        <div className="page-container">
+          <div className="category-carousel-overflow">
+            {showCatPrev && (
+              <button
+                type="button"
+                onClick={() => scrollCats('prev')}
+                aria-label="Previous"
+                className="carousel-btn carousel-btn--prev hidden md:flex"
               >
-                <div
-                  className={cn(
-                    'w-[88px] h-[88px] rounded-2xl flex items-center justify-center text-center px-2 shadow-sm group-hover:shadow-md transition-shadow',
-                    tile.bg === '#FFFFFF' && 'border border-argos-gray-200',
-                  )}
-                  style={{ backgroundColor: tile.bg, color: tile.fg }}
-                >
-                  <span className="text-[14px] font-bold leading-tight whitespace-pre-line">
-                    {tile.badge}
-                  </span>
-                </div>
-                <span className="text-[13px] font-medium text-argos-dark text-center leading-tight max-w-[100px]">
-                  {tile.label}
-                </span>
-              </Link>
-            ))}
+                <ChevronLeft size={20} strokeWidth={2.5} />
+              </button>
+            )}
 
-            {categories.map((cat) => {
-              const Icon = getCategoryIcon(cat.slug)
-              return (
-                <Link
-                  key={cat.id}
-                  to={`/browse/${cat.slug}`}
-                  className="flex flex-col items-center gap-2 flex-shrink-0 group"
-                  style={{ minWidth: 100 }}
-                >
-                  <div className="w-[88px] h-[88px] rounded-2xl overflow-hidden bg-white border border-argos-gray-200 shadow-sm group-hover:shadow-md transition-shadow flex items-center justify-center">
-                    {cat.imageUrl ? (
-                      <img
-                        src={resolveImageUrl(cat.imageUrl)}
-                        alt=""
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <Icon size={44} strokeWidth={1.5} className="text-argos-charcoal" />
-                    )}
-                  </div>
-                  <span className="text-[13px] font-medium text-argos-dark text-center leading-tight max-w-[100px]">
-                    {cat.name}
-                  </span>
-                </Link>
-              )
-            })}
+            <div ref={catScrollRef} onScroll={updateCatArrows} className="category-carousel-container">
+              <ol className="category-carousel-list">
+                {[...PINNED_TILES, JUST_FOR_YOU_TILE].map((tile) => (
+                  <li key={tile.id} className="category-carousel-item">
+                    <div className="category-slide-item">
+                      <Link to={tile.href} className="category-link">
+                        {tile.image ? (
+                          <img
+                            src={tile.image}
+                            alt=""
+                            className="category-img"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <div
+                            className="category-img category-img--icon"
+                            style={{ backgroundColor: tile.bg, color: tile.fg }}
+                          >
+                            <span className="text-[15px] font-bold leading-tight whitespace-pre-line text-center">
+                              {tile.badge}
+                            </span>
+                          </div>
+                        )}
+                        <p className="category-label">{tile.label}</p>
+                      </Link>
+                    </div>
+                  </li>
+                ))}
+
+                {categories.map((cat) => {
+                  const Icon = getCategoryIcon(cat.slug)
+                  const imgSrc = cat.imageUrl
+                    ? resolveImageUrl(cat.imageUrl)
+                    : getCategoryFallbackImage(cat.slug)
+                  return (
+                    <li key={cat.id} className="category-carousel-item">
+                      <div className="category-slide-item">
+                        <Link to={`/browse/${cat.slug}`} className="category-link">
+                          {imgSrc ? (
+                            <img
+                              src={imgSrc}
+                              alt=""
+                              className="category-img"
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <div className="category-img category-img--icon">
+                              <Icon size={44} strokeWidth={1.5} className="text-argos-charcoal" aria-hidden="true" />
+                            </div>
+                          )}
+                          <p className="category-label">{cat.name}</p>
+                        </Link>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ol>
+            </div>
+
+            {showCatNext && (
+              <button
+                type="button"
+                onClick={() => scrollCats('next')}
+                aria-label="Next"
+                className="carousel-btn carousel-btn--next hidden md:flex"
+              >
+                <ChevronRight size={20} strokeWidth={2.5} />
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Hero Carousel */}
-      <div className="hero-slider-wrap px-4">
+      {/* Hero Carousel — accessible carousel pattern */}
+      <section
+        className="hero-slider-wrap px-4"
+        aria-roledescription="carousel"
+        aria-label="Featured promotions"
+      >
         <div className="overflow-hidden rounded-2xl">
           <Swiper
             modules={[Autoplay]}
-            autoplay={{ delay: 6000, disableOnInteraction: false }}
+            autoplay={reduceMotion ? false : { delay: 6000, disableOnInteraction: false, pauseOnMouseEnter: true }}
             loop
             onSwiper={(s) => {
               heroSwiperRef.current = s
@@ -289,77 +409,110 @@ export default function HomePage() {
             onSlideChange={(s) => {
               setHeroActiveIndex(s.realIndex)
             }}
+            a11y={{
+              prevSlideMessage: 'Previous slide',
+              nextSlideMessage: 'Next slide',
+            }}
             className="w-full"
           >
-            {HERO_SLIDES.map((slide) => (
+            {HERO_SLIDES.map((slide, index) => (
               <SwiperSlide key={slide.id}>
-                {slide.variant === 'argos-pay' ? (
-                  <ArgosPayHeroSlide slide={slide} />
-                ) : (
-                  <div className="relative h-[280px] sm:h-[360px] md:h-[420px] lg:h-[460px] overflow-hidden bg-argos-gray-bg">
-                    <img
-                      src={slide.image}
-                      alt={slide.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="page-container">
-                        <div className="max-w-md">
-                          <h2 className="text-2xl md:text-[42px] font-bold text-white mb-2 leading-tight tracking-tight">
-                            {slide.title}
-                          </h2>
-                          <p className="text-white/90 text-sm md:text-base mb-5 font-normal">
-                            {slide.subtitle}
-                          </p>
-                          <Link
-                            to={slide.ctaLink}
-                            className="inline-block text-white font-bold text-sm px-6 py-3 rounded-sm hover:brightness-110 transition-all"
-                            style={{ backgroundColor: slide.accent }}
-                          >
-                            {slide.cta}
-                          </Link>
+                <div
+                  id={`hero-slide-${index}`}
+                  role="group"
+                  aria-roledescription="slide"
+                  aria-label={`${index + 1} of ${HERO_SLIDES.length}: ${slide.title}`}
+                >
+                  {slide.variant === 'argos-pay' ? (
+                    <ArgosPayHeroSlide slide={slide} />
+                  ) : (
+                    <div className="relative aspect-[16/7] min-h-[280px] sm:aspect-[16/6] lg:aspect-[16/5] overflow-hidden bg-argos-gray-bg">
+                      <img
+                        src={slide.image}
+                        srcSet={buildSrcSet(slide.image)}
+                        sizes="(min-width: 1024px) 1400px, 100vw"
+                        alt={slide.title}
+                        className="w-full h-full object-cover"
+                        // First slide is the LCP — prioritise it and load eagerly.
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        decoding="async"
+                        // @ts-expect-error — fetchpriority is valid HTML but missing from React types <19.2
+                        fetchpriority={index === 0 ? 'high' : 'auto'}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="page-container">
+                          <div className="max-w-md">
+                            <h2 className="text-2xl md:text-[42px] font-bold text-white mb-2 leading-tight tracking-tight">
+                              {slide.title}
+                            </h2>
+                            <p className="text-white/90 text-sm md:text-base mb-5 font-normal">
+                              {slide.subtitle}
+                            </p>
+                            <Link
+                              to={slide.ctaLink}
+                              className="inline-block text-white font-bold text-sm px-6 py-3 rounded-sm hover:brightness-110 transition-all"
+                              style={{ backgroundColor: slide.accent }}
+                            >
+                              {slide.cta}
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </SwiperSlide>
             ))}
           </Swiper>
         </div>
 
+        {/* Pagination — proper tablist semantics so a screen reader knows
+            which slide is active without relying on visual styling. */}
         <div className="flex items-center justify-center gap-3 py-2.5 bg-white">
           <button
             onClick={() => heroSwiperRef.current?.slidePrev()}
-            className="w-8 h-8 rounded-full bg-white border border-argos-gray-200 flex items-center justify-center hover:bg-argos-gray-50 transition-colors shrink-0"
+            className="w-8 h-8 rounded-full bg-white border border-argos-gray-200 flex items-center justify-center hover:bg-argos-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-argos-blue transition-colors shrink-0"
             aria-label="Previous slide"
+            type="button"
           >
-            <ChevronLeft size={14} className="text-argos-charcoal" />
+            <ChevronLeft size={14} className="text-argos-charcoal" aria-hidden="true" />
           </button>
 
-          {HERO_SLIDES.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => heroSwiperRef.current?.slideToLoop(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              className={`transition-all duration-300 rounded-full h-3 ${
-                i === heroActiveIndex
-                  ? 'w-8 bg-argos-blue'
-                  : 'w-3 bg-argos-gray-300 hover:bg-argos-gray-400'
-              }`}
-            />
-          ))}
+          <div role="tablist" aria-label="Hero slides" className="flex items-center gap-3">
+            {HERO_SLIDES.map((_, i) => {
+              const isActive = i === heroActiveIndex
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-controls={`hero-slide-${i}`}
+                  aria-label={`Slide ${i + 1} of ${HERO_SLIDES.length}`}
+                  onClick={() => heroSwiperRef.current?.slideToLoop(i)}
+                  className={cn(
+                    'transition-all duration-300 rounded-full h-3',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-argos-blue focus-visible:ring-offset-1',
+                    isActive
+                      ? 'w-8 bg-argos-blue'
+                      : 'w-3 bg-argos-gray-500 hover:bg-argos-gray-mid',
+                  )}
+                />
+              )
+            })}
+          </div>
 
           <button
             onClick={() => heroSwiperRef.current?.slideNext()}
-            className="w-8 h-8 rounded-full bg-white border border-argos-gray-200 flex items-center justify-center hover:bg-argos-gray-50 transition-colors shrink-0"
+            className="w-8 h-8 rounded-full bg-white border border-argos-gray-200 flex items-center justify-center hover:bg-argos-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-argos-blue transition-colors shrink-0"
             aria-label="Next slide"
+            type="button"
           >
-            <ChevronRight size={14} className="text-argos-charcoal" />
+            <ChevronRight size={14} className="text-argos-charcoal" aria-hidden="true" />
           </button>
         </div>
-      </div>
+      </section>
 
       {/* Products */}
       <div className="page-container py-8">
@@ -369,7 +522,7 @@ export default function HomePage() {
             to="/browse"
             className="flex items-center gap-1 text-[16px] font-normal text-argos-blue hover:underline"
           >
-            See all <ChevronRight size={14} />
+            See all <ChevronRight size={14} aria-hidden="true" />
           </Link>
         </div>
         <Swiper
@@ -386,7 +539,9 @@ export default function HomePage() {
         >
           {productsLoading
             ? Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="bg-gray-200 aspect-square rounded animate-pulse" />
+                <SwiperSlide key={i}>
+                  <div className="bg-gray-200 aspect-square rounded animate-pulse" />
+                </SwiperSlide>
               ))
             : products.map((product) => (
                 <SwiperSlide key={product.id}>

@@ -9,7 +9,6 @@ interface MegaMenuProps {
   topOffset?: number
 }
 
-// ── Chevron right — mirrors Argos ._1yQY6 ─────────────────────────────────────
 function ChevronRight() {
   return (
     <svg
@@ -26,10 +25,9 @@ function ChevronRight() {
   )
 }
 
-// ── Left category rail ─────────────────────────────────────────────────────────
-// Mirrors Argos ._2wWG_ list + ._3ha-x link:
-//   padding: 14px 10px 14px 16px; font-size: 16px; color: #333
-//   border-bottom: 1px solid #e0e0e0 per item; no category icons
+// ── Left category rail ──────────────────────────────────────────────────────
+// Switches the panel on hover, focus, and click — keyboard tabbing through the
+// rail now actually reveals the corresponding sub-category column.
 function CategoryRail({
   categories,
   activeId,
@@ -40,49 +38,40 @@ function CategoryRail({
   onEnter: (id: string) => void
 }) {
   return (
-    <nav
-      aria-label="Shop categories"
-      className="shrink-0 overflow-y-auto border-r border-argos-gray-200 bg-white"
-      style={{ width: 230 }}
-    >
-      <ul>
-        {categories.map((cat) => {
-          const isActive = cat.id === activeId
-          return (
-            <li key={cat.id} className="border-b border-argos-gray-100 last:border-b-0">
-              <button
-                type="button"
-                onMouseEnter={() => onEnter(cat.id)}
-                onClick={() => onEnter(cat.id)}
-                aria-current={isActive ? 'true' : undefined}
-                className={cn(
-                  'w-full flex items-center justify-between gap-2 text-left transition-colors',
-                  'text-[16px] leading-[1.2]',
-                  isActive
-                    ? 'bg-argos-gray-100 font-semibold text-argos-gray-900'
-                    : 'text-[#333333] hover:bg-argos-gray-50',
-                )}
-                style={{
-                  padding: '14px 10px 14px 16px',
-                  fontFamily: 'Barlow, "Helvetica Neue", Helvetica, Arial, sans-serif',
-                }}
-              >
-                <span>{cat.name}</span>
-                <ChevronRight />
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-    </nav>
+    <ul>
+      {categories.map((cat) => {
+        const isActive = cat.id === activeId
+        return (
+          <li key={cat.id} className="border-b border-argos-gray-100 last:border-b-0">
+            <button
+              type="button"
+              onMouseEnter={() => onEnter(cat.id)}
+              onFocus={() => onEnter(cat.id)}
+              onClick={() => onEnter(cat.id)}
+              aria-current={isActive ? 'true' : undefined}
+              className={cn(
+                'w-full flex items-center justify-between gap-2 text-left transition-colors',
+                'text-[16px] leading-[1.2]',
+                isActive
+                  ? 'bg-argos-gray-100 font-semibold text-argos-gray-900'
+                  : 'text-[#333333] hover:bg-argos-gray-50',
+              )}
+              style={{
+                padding: '14px 10px 14px 16px',
+                fontFamily: 'Barlow, "Helvetica Neue", Helvetica, Arial, sans-serif',
+              }}
+            >
+              <span>{cat.name}</span>
+              <ChevronRight />
+            </button>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
-// ── Sub-category panel ─────────────────────────────────────────────────────────
-// Mirrors Argos right panel:
-//   - "Shop all [Category]" bold blue link at top
-//   - Children in column-first layout (4 cols), no bullets, no section headers
-//   - Each link: 16px, #333, hover blue + underline
+// ── Sub-category panel ─────────────────────────────────────────────────────
 function SubCategoryPanel({
   category,
   onClose,
@@ -93,14 +82,12 @@ function SubCategoryPanel({
   const children = category.children
   const NUM_COLS = 4
   const colSize = Math.ceil(children.length / NUM_COLS)
-  // Slice into column arrays so children read top-to-bottom, left-to-right
   const columns: Category[][] = Array.from({ length: NUM_COLS }, (_, i) =>
     children.slice(i * colSize, (i + 1) * colSize),
   ).filter((col) => col.length > 0)
 
   return (
     <div className="flex-1 overflow-y-auto py-5 px-6 bg-white">
-      {/* "Shop all X" — mirrors Argos top-of-panel bold link */}
       <Link
         to={`/browse/${category.slug}`}
         onClick={onClose}
@@ -145,12 +132,11 @@ function SubCategoryPanel({
   )
 }
 
-// ── Main MegaMenu ──────────────────────────────────────────────────────────────
+// ── Main MegaMenu ──────────────────────────────────────────────────────────
 export function MegaMenu({ categories, onClose, topOffset = 65 }: MegaMenuProps) {
   const [activeId, setActiveId] = useState<string | null>(categories[0]?.id ?? null)
   const panelRef = useRef<HTMLDivElement>(null)
 
-  // Close on outside click (delayed to avoid immediately closing on menu open)
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -168,7 +154,7 @@ export function MegaMenu({ categories, onClose, topOffset = 65 }: MegaMenuProps)
 
   return (
     <>
-      {/* Semi-transparent backdrop */}
+      {/* Decorative backdrop — keep aria-hidden so SRs don't announce it. */}
       <div
         className="fixed inset-0 z-40 animate-fade-in"
         style={{ top: topOffset, background: 'rgba(0,0,0,0.4)' }}
@@ -176,32 +162,33 @@ export function MegaMenu({ categories, onClose, topOffset = 65 }: MegaMenuProps)
         onClick={onClose}
       />
 
-      {/* Dropdown panel — full width, white, shadow */}
-      <div
-        ref={panelRef}
+      {/* Navigation flyout — semantically a <nav>, not a "dialog". */}
+      <nav
+        ref={panelRef as unknown as React.RefObject<HTMLElement>}
         className="fixed left-0 right-0 z-40 bg-white shadow-xl animate-slide-down"
         style={{ top: topOffset, borderTop: '1px solid #cccccc' }}
-        role="dialog"
-        aria-modal="false"
         aria-label="Shop categories"
       >
         <div
           className="flex w-full"
           style={{ maxHeight: 'calc(100vh - 220px)', minHeight: 300 }}
         >
-          {/* Left rail: top-level category list */}
-          <CategoryRail
-            categories={categories}
-            activeId={activeId}
-            onEnter={setActiveId}
-          />
+          <div
+            className="shrink-0 overflow-y-auto border-r border-argos-gray-200 bg-white"
+            style={{ width: 230 }}
+          >
+            <CategoryRail
+              categories={categories}
+              activeId={activeId}
+              onEnter={setActiveId}
+            />
+          </div>
 
-          {/* Right panel: sub-categories */}
           {activeCategory && (
             <SubCategoryPanel category={activeCategory} onClose={onClose} />
           )}
         </div>
-      </div>
+      </nav>
     </>
   )
 }

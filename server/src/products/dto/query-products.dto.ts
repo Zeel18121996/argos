@@ -18,6 +18,7 @@ export enum ProductSort {
   'price-asc' = 'price-asc',
   'price-desc' = 'price-desc',
   rating = 'rating',
+  popular = 'popular',
 }
 
 export class QueryProductsDto {
@@ -53,6 +54,19 @@ export class QueryProductsDto {
   @MaxLength(120)
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   slug?: string
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => {
+    if (typeof value === 'string')
+      return value
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+    return value
+  })
+  slugs?: string[]
 
   @IsOptional()
   @IsArray()

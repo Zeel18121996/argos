@@ -35,7 +35,16 @@ export class QueryOrderDto {
 export class AdminQueryOrderDto extends QueryOrderDto {}
 
 export class UpdateOrderStatusDto {
-  @IsIn(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'])
+  @IsIn([
+    'pending',
+    'confirmed',
+    'processing',
+    'shipped',
+    'out_for_delivery',
+    'delivered',
+    'cancelled',
+    'refunded',
+  ])
   next: string
 
   @IsOptional()

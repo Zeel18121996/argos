@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Package, AlertCircle, CheckCircle, Truck, Home } from 'lucide-react'
+import { Search, Package, AlertCircle, CheckCircle, Truck, Home, Navigation } from 'lucide-react'
 import { useTrackOrderQuery } from '@/services/ordersApi'
 import { cn } from '@/utils/cn'
 
@@ -18,16 +18,17 @@ export default function OrderTrackingPage() {
     setShouldFetch(true)
   }
 
+  // `status` maps to the backend OrderStatus value.
+  // `label` is what's shown in the UI.
   const statusSteps = [
-    { label: 'Confirmed', icon: CheckCircle },
-    { label: 'Processing', icon: Package },
-    { label: 'Shipped', icon: Truck },
-    { label: 'Delivered', icon: Home },
+    { status: 'confirmed', label: 'Confirmed', icon: CheckCircle },
+    { status: 'processing', label: 'Ready to Ship', icon: Package },
+    { status: 'shipped', label: 'Shipped', icon: Truck },
+    { status: 'out_for_delivery', label: 'Out for Delivery', icon: Navigation },
+    { status: 'delivered', label: 'Delivered', icon: Home },
   ]
 
-  const currentStepIndex = statusSteps.findIndex(
-    (s) => s.label.toLowerCase() === (data?.status ?? '').toLowerCase(),
-  )
+  const currentStepIndex = statusSteps.findIndex((s) => s.status === (data?.status ?? ''))
 
   return (
     <div className="argos-container py-10 max-w-xl mx-auto">

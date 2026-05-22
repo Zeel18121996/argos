@@ -71,10 +71,10 @@ export interface ProductReview {
 
 export interface ProductListParams {
   categorySlug?: string
-  search?: string
+  q?: string
   page?: number
   limit?: number
-  sortBy?: 'relevance' | 'price-asc' | 'price-desc' | 'rating' | 'newest'
+  sortBy?: 'relevance' | 'price-asc' | 'price-desc' | 'rating' | 'newest' | 'popular'
   minPrice?: number
   maxPrice?: number
   brand?: string
@@ -83,12 +83,18 @@ export interface ProductListParams {
   isNew?: boolean
   isFeatured?: boolean
   isClearance?: boolean
+  /** Fetch a specific set of products by slug (used for recently viewed). */
+  slugs?: string
+}
+
+export interface PaginationMeta {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
 }
 
 export interface ProductListResponse {
   items: Product[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
+  meta: PaginationMeta
 }

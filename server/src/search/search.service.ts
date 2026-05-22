@@ -12,7 +12,7 @@ export class SearchService {
       q: query.q,
       page: query.page,
       limit: query.limit,
-      sortBy: ProductSort.relevance,
+      sortBy: query.sortBy ?? ProductSort.relevance,
     })
   }
 }

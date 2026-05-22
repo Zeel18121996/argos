@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm test:*)",
+      "Bash(npm run test)",
+      "Bash(npm run test:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run build)",
+      "Bash(npm run migration:generate:*)",
+      "Bash(npm run migration:run)",
+      "Bash(npm run migration:revert)",
+      "Bash(npm run seed:run)",
+      "Bash(git status)",
+      "Bash(git status:*)",
+      "Bash(git diff)",
+      "Bash(git diff:*)",
+      "Bash(git log)",
+      "Bash(git log:*)",
+      "Bash(git branch)",
+      "Bash(git branch:*)",
+      "Bash(git show)",
+      "Bash(git show:*)",
+      "Bash(docker-compose ps)",
+      "Bash(docker compose ps)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(npm publish:*)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Bash(*aws*)",
+      "Bash(*stripe*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const p=process.env.CLAUDE_TOOL_FILE_PATH||''; if(/\\.(ts|tsx)$/.test(p)){require('child_process').execSync('npx prettier --write \\\"'+p+'\\\"',{stdio:'ignore'});}\""
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const m=(process.env.CLAUDE_USER_PROMPT||'').toLowerCase(); const tips=[]; if(/migration|schema|column|table/.test(m))tips.push('Reminder: read server/CLAUDE.md (Sequelize section); use the sequelize-migration skill.'); if(/checkout|payment|stripe|card/.test(m))tips.push('Reminder: payments are SIMULATED — see PAYMENTS.md. Card 4000000000000002 must always fail.'); if(/admin|role|guard|jwt/.test(m))tips.push('Reminder: spawn access-control-auditor after admin/auth changes.'); if(tips.length)console.log('\\n[ArgosC hints]\\n'+tips.join('\\n'));\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -Command \"try { Add-Type -AssemblyName System.Windows.Forms; $n = New-Object System.Windows.Forms.NotifyIcon; $n.Icon = [System.Drawing.SystemIcons]::Information; $n.Visible = $true; $n.ShowBalloonTip(3000, 'ArgosC', 'Claude finished a task', 'Info'); Start-Sleep -Seconds 4; $n.Dispose() } catch {}\""
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -6,16 +6,14 @@ import { SlidersHorizontal } from 'lucide-react'
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams()
-  const query = searchParams.get('q') ?? ''
+  const query = (searchParams.get('q') ?? '').trim()
   const [sortBy, setSortBy] = useState<string>('relevance')
   const [showFilters, setShowFilters] = useState(false)
 
-  const { data, isLoading, error } = useSearchProductsQuery({
-    q: query,
-    sortBy,
-    limit: 24,
-    page: 1,
-  })
+  const { data, isLoading, error } = useSearchProductsQuery(
+    { q: query, sortBy, limit: 24, page: 1 },
+    { skip: !query },
+  )
 
   const products = data?.items ?? []
   const meta = data?.meta
@@ -56,7 +54,11 @@ export default function SearchPage() {
 
       {meta && <p className="text-sm text-argos-gray-500 mb-4">{meta.total} results</p>}
 
-      {isLoading ? (
+      {!query ? (
+        <div className="text-center py-12">
+          <p className="text-argos-gray-600">Type a product or brand in the search bar above.</p>
+        </div>
+      ) : isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="bg-gray-200 aspect-[3/4] rounded animate-pulse" />

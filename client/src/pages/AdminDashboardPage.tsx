@@ -2,17 +2,17 @@ import { useGetDashboardStatsQuery } from '@/services/adminApi'
 import { formatPriceFromPounds } from '@/utils/format'
 import { formatDate } from '@/utils/format'
 import { Link } from 'react-router-dom'
-import { Package, ShoppingCart, PoundSterling, Users, ArrowRight } from 'lucide-react'
+import { Package, ShoppingCart, IndianRupee, Users, ArrowRight } from 'lucide-react'
 
 export default function AdminDashboardPage() {
   const { data: stats, isLoading } = useGetDashboardStatsQuery()
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold text-argos-dark">Dashboard</h1>
+    <div className="p-6 lg:p-8 space-y-8">
+      <h1 className="text-3xl font-bold text-argos-dark tracking-tight">Dashboard</h1>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           title="Today's orders"
           value={stats?.todayOrders ?? 0}
@@ -24,7 +24,7 @@ export default function AdminDashboardPage() {
           value={
             stats?.todayRevenue != null ? formatPriceFromPounds(stats.todayRevenue / 100) : '—'
           }
-          icon={PoundSterling}
+          icon={IndianRupee}
           loading={isLoading}
         />
         <StatCard
@@ -43,8 +43,8 @@ export default function AdminDashboardPage() {
 
       {/* Recent orders */}
       <div className="bg-white border border-argos-border rounded overflow-hidden">
-        <div className="px-4 py-3 border-b border-argos-border flex items-center justify-between">
-          <h2 className="font-bold text-argos-dark">Recent orders</h2>
+        <div className="px-5 py-4 border-b border-argos-border flex items-center justify-between">
+          <h2 className="text-lg font-bold text-argos-dark">Recent orders</h2>
           <Link
             to="/admin/orders"
             className="flex items-center gap-1 text-sm font-bold text-argos-blue hover:underline"
@@ -52,20 +52,20 @@ export default function AdminDashboardPage() {
             View all <ArrowRight size={14} />
           </Link>
         </div>
-        <table className="w-full text-sm">
+        <table className="w-full text-[15px]">
           <thead className="bg-argos-gray-bg border-b border-argos-border">
             <tr>
-              <th className="text-left px-4 py-2 font-bold text-argos-dark">Order</th>
-              <th className="text-left px-4 py-2 font-bold text-argos-dark">Status</th>
-              <th className="text-right px-4 py-2 font-bold text-argos-dark">Total</th>
-              <th className="text-left px-4 py-2 font-bold text-argos-dark">Date</th>
+              <th className="text-left px-5 py-3 font-bold text-argos-dark">Order</th>
+              <th className="text-left px-5 py-3 font-bold text-argos-dark">Status</th>
+              <th className="text-right px-5 py-3 font-bold text-argos-dark">Total</th>
+              <th className="text-left px-5 py-3 font-bold text-argos-dark">Date</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={4} className="px-4 py-3">
+                  <td colSpan={4} className="px-5 py-4">
                     <div className="h-4 bg-gray-200 rounded animate-pulse" />
                   </td>
                 </tr>
@@ -73,21 +73,21 @@ export default function AdminDashboardPage() {
             ) : stats?.recentOrders && stats.recentOrders.length > 0 ? (
               stats.recentOrders.map((order) => (
                 <tr key={order.id} className="border-b border-argos-border hover:bg-argos-gray-bg">
-                  <td className="px-4 py-3 font-bold text-argos-dark">{order.orderNumber}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-4 font-bold text-argos-dark">{order.orderNumber}</td>
+                  <td className="px-5 py-4">
                     <StatusBadge status={order.status} />
                   </td>
-                  <td className="px-4 py-3 text-right font-bold text-argos-dark">
+                  <td className="px-5 py-4 text-right font-bold text-argos-dark">
                     {formatPriceFromPounds(order.total / 100)}
                   </td>
-                  <td className="px-4 py-3 text-xs text-argos-gray">
+                  <td className="px-5 py-4 text-sm text-argos-gray">
                     {formatDate(order.createdAt)}
                   </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-argos-gray">
+                <td colSpan={4} className="px-5 py-10 text-center text-argos-gray text-base">
                   No orders yet.
                 </td>
               </tr>
@@ -111,17 +111,17 @@ function StatCard({
   loading: boolean
 }) {
   return (
-    <div className="bg-white border border-argos-border rounded p-4 flex items-start justify-between">
+    <div className="bg-white border border-argos-border rounded p-5 flex items-start justify-between">
       <div>
-        <p className="text-xs text-argos-gray font-bold uppercase tracking-wide">{title}</p>
+        <p className="text-sm text-argos-gray font-bold uppercase tracking-wide">{title}</p>
         {loading ? (
-          <div className="mt-2 h-6 w-20 bg-gray-200 rounded animate-pulse" />
+          <div className="mt-3 h-8 w-24 bg-gray-200 rounded animate-pulse" />
         ) : (
-          <p className="mt-1 text-2xl font-bold text-argos-dark">{value}</p>
+          <p className="mt-2 text-3xl font-bold text-argos-dark leading-tight">{value}</p>
         )}
       </div>
-      <div className="p-2 bg-argos-gray-bg rounded">
-        <Icon size={20} className="text-argos-gray" />
+      <div className="p-2.5 bg-argos-gray-bg rounded">
+        <Icon size={22} />
       </div>
     </div>
   )
@@ -137,7 +137,9 @@ function StatusBadge({ status }: { status: string }) {
           ? 'bg-blue-100 text-blue-700'
           : 'bg-gray-100 text-gray-700'
   return (
-    <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded uppercase ${color}`}>
+    <span
+      className={`inline-block text-xs font-bold px-2.5 py-1 rounded uppercase tracking-wide ${color}`}
+    >
       {status}
     </span>
   )

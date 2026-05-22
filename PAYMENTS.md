@@ -374,6 +374,76 @@ The Razorpay script tag in [client/index.html](client/index.html) didn't load. C
 
 ---
 
+## 9b. Dev Bypass Mode (skip Razorpay popup)
+
+A development-only escape hatch that **completely skips the Razorpay popup** so you can test the checkout → order → confirmation flow without manually picking a payment method each time. One click on "Pay" → instant order creation.
+
+### How to enable
+
+| Variable | File | Value |
+|---|---|---|
+| `PAYMENT_BYPASS_ENABLED` | `E:\Code\ArgosC\.env` | `true` |
+| `VITE_PAYMENT_BYPASS` | `E:\Code\ArgosC\client\.env` | `true` |
+
+After changing either file, **restart both the server and client** (Vite envs are read at boot).
+
+### How it works
+
+1. **Client** ([CheckoutPage.tsx](client/src/pages/CheckoutPage.tsx) `handlePlaceOrder`):
+   - If `import.meta.env.VITE_PAYMENT_BYPASS === 'true'`, skips `window.Razorpay` entirely.
+   - Still calls `POST /checkout/create-payment` (so basket/stock/total validation runs normally).
+   - Then immediately calls `POST /checkout/verify` with:
+     - `razorpayOrderId`: the real Razorpay order_id from create-payment (so it shows up on the dashboard).
+     - `razorpayPaymentId`: `pay_dev_<timestamp>` — synthetic; lets you spot bypass payments in the DB.
+     - `razorpaySignature`: `'dev_bypass'` — the sentinel string the server recognises.
+
+2. **Server** ([payments.service.ts](server/src/payments/payments.service.ts) `verifySignature`):
+   - Returns early (no HMAC check) **only if all three are true**:
+     - `signature === 'dev_bypass'`
+     - `PAYMENT_BYPASS_ENABLED === 'true'`
+     - `NODE_ENV === 'development'`
+   - Otherwise the original HMAC path runs and rejects the request.
+
+3. **Joi validation** ([env.validation.ts](server/src/config/env.validation.ts)):
+   - Refuses to boot the server if `PAYMENT_BYPASS_ENABLED=true` while `NODE_ENV !== 'development'`. This is the production safety net.
+
+### Identifying bypass orders in the DB
+
+Bypass orders have `payment_intent_id` starting with `pay_dev_`. Real Razorpay payments use `pay_<22-char-id>`. Useful queries:
+
+```sql
+-- Count bypass vs real payments
+SELECT
+  CASE WHEN payment_intent_id LIKE 'pay_dev_%' THEN 'bypass' ELSE 'real' END AS kind,
+  COUNT(*)
+FROM orders
+GROUP BY kind;
+
+-- Find all bypass orders
+SELECT order_number, total, created_at
+FROM orders
+WHERE payment_intent_id LIKE 'pay_dev_%'
+ORDER BY created_at DESC;
+```
+
+### When to disable
+
+- **Before deploying** anything to staging or production.
+- **When testing the real Razorpay flow** (e.g., verifying the popup theme, prefill, error handling, success/failure UI).
+- **Before recording a demo** — bypass orders won't show up on the Razorpay dashboard transactions list (real test orders do).
+
+To switch back: set both env flags to `false` (or empty) and restart. The Razorpay popup will appear again.
+
+### Security guarantees recap
+
+| Attack | Why it fails |
+|---|---|
+| Client forges `dev_bypass` signature in production | Server flag is `false` → HMAC path rejects it with 400. |
+| Someone enables `PAYMENT_BYPASS_ENABLED=true` in prod `.env` | Joi validation fails at boot → server refuses to start. |
+| Compromised client env exposes the bypass behaviour | No effect — server is the gate. Client flag alone does nothing. |
+
+---
+
 ## 10. Deferred / Future Work
 
 These are intentionally out of scope for the current implementation but should be added before going live with real money.

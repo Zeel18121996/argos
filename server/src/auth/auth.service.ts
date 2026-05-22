@@ -21,7 +21,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto'
 import type { JwtPayload } from './types/jwt-user.type'
 
 const BCRYPT_ROUNDS = 12
-const ACCESS_TOKEN_TTL = '15m'
+const ACCESS_TOKEN_TTL = '24h'
 const REFRESH_TOKEN_TTL_DAYS = 7
 
 export interface AuthResultPayload {

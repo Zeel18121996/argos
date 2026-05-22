@@ -52,19 +52,24 @@
   --color-argos-black: #000000;
 
   --color-argos-gray: #666666;
-  --color-argos-gray-mid: #707070;
-  --color-argos-gray-light: #CCCCCC;
+  --color-argos-gray-mid: #595959;          /* was #707070 — see gray-500 */
+  --color-argos-gray-light: #9a9a9a;        /* was #CCCCCC — see gray-300 */
   --color-argos-gray-bg: #F5F5F5;
   --color-argos-utility-bg: #F5F5F5;
   --color-argos-footer-bg: #F2F2F2;
 
+  /* Grayscale ramp.
+     gray-300 used to be #CCCCCC, which sits at 1.6:1 on white and fails
+     WCAG AA for any text. Bumped to #9a9a9a (3.5:1 — borders/dividers only).
+     gray-500 was #707070 (4.49:1, fails AA for <14px bold / <18.66px regular).
+     Bumped to #595959 which clears 7.0:1, AA for all sizes. */
   --color-argos-gray-50: #F5F5F5;
   --color-argos-gray-100: #F2F2F2;
   --color-argos-gray-200: #E0E0E0;
-  --color-argos-gray-300: #CCCCCC;
-  --color-argos-gray-400: #999999;
-  --color-argos-gray-500: #707070;
-  --color-argos-gray-600: #666666;
+  --color-argos-gray-300: #9a9a9a;
+  --color-argos-gray-400: #888888;
+  --color-argos-gray-500: #595959;
+  --color-argos-gray-600: #4a4a4a;
   --color-argos-gray-700: #333333;
   --color-argos-gray-800: #262626;
   --color-argos-gray-900: #111111;
@@ -108,7 +113,8 @@ body {
   flex-direction: column;
 }
 
-/* Container utilities */
+/* Container utilities — kept as aliases for now. Future cleanup: pick one
+   and codemod call sites. */
 .page-container,
 .argos-container {
   width: 100%;
@@ -119,8 +125,7 @@ body {
   padding-right: 16px;
 }
 
-/* Hero banner wrapper — same max-width as page-container but NO horizontal padding.
-   Matches argos.co.uk which constrains the carousel to ~1400px centered. */
+/* Hero banner wrapper — same max-width as page-container but NO horizontal padding. */
 .hero-slider-wrap {
   width: 100%;
   max-width: 1400px;
@@ -188,12 +193,23 @@ body {
   animation-play-state: paused;
 }
 
-/* ── Swiper customization — mirrors Argos's Fable .ds-c-slides spec ── */
+/* ── Swiper customization ─────────────────────────────────────────────── */
 
-/* Prev / Next buttons (Argos: .ds-c-slides__previous-button / __next-button)
-   - Absolute positioned at left/right, 8px from edge
-   - Round white circle with subtle shadow `0 1px 8px 0 #00000029`
-   - Icon is dark grey, button is z-10 above the slide */
+/* Product-card Swiper: all slides in a row stretch to the tallest card.
+   This keeps title / rating / price / button vertically aligned across cards. */
+.swiper-product-cards .swiper-wrapper {
+  align-items: stretch;
+}
+.swiper-product-cards .swiper-slide {
+  height: auto;   /* override Swiper's default fixed height */
+  display: flex;
+  flex-direction: column;
+}
+.swiper-product-cards .swiper-slide > * {
+  flex: 1;         /* card link fills the full slide height */
+}
+
+/* Prev / Next buttons */
 .swiper-button-next,
 .swiper-button-prev {
   color: #333333 !important;
@@ -219,17 +235,22 @@ body {
   pointer-events: none;
 }
 
-/* Pagination dots (Argos: .ds-c-slides__controls-dots / __controls-dot-indicator)
-   - Default dot: 12×12 round, #d8d8d8
-   - Active dot: 32px-wide pill, #044C99 (argos-blue — equivalent of Fable #1976d2)
-   - Smooth 300ms linear transition between states */
+/* Keyboard users need the focus ring visible — without this they tab into
+   an invisible control because the hover-reveal pattern doesn't fire. */
+.swiper-button-next:focus-visible,
+.swiper-button-prev:focus-visible {
+  outline: 2px solid #044C99;
+  outline-offset: 2px;
+}
+
+/* Pagination dots */
 .swiper-pagination {
   bottom: 12px !important;
 }
 .swiper-pagination-bullet {
   width: 12px !important;
   height: 12px !important;
-  background: #d8d8d8 !important;
+  background: #9a9a9a !important;
   opacity: 1 !important;
   border-radius: 9999px !important;
   margin: 0 4px !important;
@@ -253,6 +274,143 @@ body {
 .cat-scroll::-webkit-scrollbar { display: none; }
 .cat-scroll > * { scroll-snap-align: start; }
 
+/* ── Argos propbar wrapper (max-width 1200, centered, 8px vertical padding) ── */
+.argos-propbar {
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 8px 0;
+  list-style: none;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+.argos-propbar li {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.argos-propbar li + li {
+  border-left: 1px solid var(--color-argos-gray-200);
+}
+
+/* ── Argos-style category carousel (matches argos.co.uk visualnav) ── */
+.category-carousel-wrapper {
+  background-color: #ffffff;
+  padding: 0 10px 0 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+.category-carousel-overflow {
+  display: flex;
+  align-items: center;
+  position: relative;
+  width: 100%;
+}
+.category-carousel-container {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-top:28px;
+}
+.category-carousel-container::-webkit-scrollbar { display: none; }
+
+.category-carousel-list {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 106px;
+  gap: 4px;
+  scroll-snap-type: x mandatory;
+  padding: 8px 0 4px;
+  margin: 0;
+  list-style: none;
+}
+.category-carousel-item {
+  display: flex;
+  flex-shrink: 1;
+  flex-grow: 0;
+  width: 106px;
+  max-width: 100%;
+  scroll-snap-align: start;
+}
+.category-slide-item {
+  display: flex;
+  flex-direction: column;
+  width: 106px;
+  height: 160px;
+}
+.category-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 90px;
+  margin: 0 auto;
+  padding: 0;
+  text-decoration: none;
+  color: #262626;
+  font-size: 16px;
+  height: 100%;
+}
+.category-img {
+  display: block;
+  width: 80px;
+  height: 80px;
+  object-fit: fill;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background-color: #f2f2f2;
+}
+.category-img--icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.category-label {
+  font-size: 16px;
+  font-weight: 400;
+  color: #262626;
+  text-align: center;
+  line-height: 24px;
+  margin: 0 0 10px 0;
+  padding: 0;
+  width: 90px;
+}
+.category-link:hover .category-label {
+  text-decoration: underline;
+  color: #044c99;
+}
+.category-link:hover .category-img { opacity: 0.9; }
+
+.carousel-btn {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background-color: #044c99;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: background-color 0.2s;
+  color: #ffffff;
+}
+.carousel-btn:hover { background-color: #033a75; }
+.carousel-btn--next { right: -10px; }
+.carousel-btn--prev { left: -10px; }
+
+@media (max-width: 600px) {
+  .category-carousel-item,
+  .category-slide-item { width: 90px; }
+  .category-carousel-list { grid-auto-columns: 90px; }
+}
+
 /* ── Line clamp utilities ── */
 @layer utilities {
   .line-clamp-2 {
@@ -272,5 +430,23 @@ body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #F5F5F5; }
-::-webkit-scrollbar-thumb { background: #CCCCCC; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #999999; }
+::-webkit-scrollbar-thumb { background: #9a9a9a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #595959; }
+
+/* ── Reduced motion ──────────────────────────────────────────────────────
+   Honour OS-level "reduce motion" preference. Kills the hero autoplay
+   loop, the promo-bar ticker, the skeleton shimmer, and any hover
+   scale/translate transforms. Animations aren't strictly disabled — they
+   complete in ~1ms so React state still settles. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .argos-ticker-inner,
+  .skeleton {
+    animation: none !important;
+  }
+}

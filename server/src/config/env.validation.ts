@@ -39,4 +39,15 @@ export const envValidationSchema = Joi.object({
   // Razorpay (test or live mode). Get from https://dashboard.razorpay.com/app/keys
   RAZORPAY_KEY_ID: Joi.string().required(),
   RAZORPAY_KEY_SECRET: Joi.string().required(),
+
+  // DEV ONLY: when 'true', the verify endpoint accepts a sentinel signature
+  // `dev_bypass` and skips HMAC checking. The Joi rule below refuses to start
+  // the server if this is set to 'true' while NODE_ENV !== 'development'.
+  PAYMENT_BYPASS_ENABLED: Joi.string()
+    .valid('true', 'false')
+    .default('false')
+    .when('NODE_ENV', {
+      not: 'development',
+      then: Joi.valid('false'),
+    }),
 })

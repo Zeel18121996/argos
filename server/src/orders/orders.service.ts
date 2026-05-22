@@ -54,7 +54,8 @@ const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending: ['confirmed', 'cancelled'],
   confirmed: ['processing', 'cancelled'],
   processing: ['shipped', 'cancelled'],
-  shipped: ['delivered'],
+  shipped: ['out_for_delivery'],
+  out_for_delivery: ['delivered'],
   delivered: ['refunded'],
   cancelled: [],
   refunded: [],
@@ -73,9 +74,11 @@ export class OrdersService {
     const { page = 1, limit = 30 } = query
     const { count, rows } = await this.orderModel.findAndCountAll({
       where: { userId },
+      include: [{ model: OrderItemModel, as: 'items' }],
       order: [['created_at', 'DESC']],
       limit,
       offset: (page - 1) * limit,
+      distinct: true,
     })
     return {
       data: rows.map((r) => this.toSummary(r)),
@@ -289,12 +292,13 @@ export class OrdersService {
   }
 
   private toSummary(order: OrderModel): OrderSummary {
+    const itemCount = (order.items ?? []).reduce((sum, it) => sum + (it.quantity ?? 0), 0)
     return {
       id: order.id,
       orderNumber: order.orderNumber,
       status: order.status,
       total: order.total,
-      itemCount: order.items?.length ?? 0,
+      itemCount,
       createdAt: order.createdAt,
     }
   }

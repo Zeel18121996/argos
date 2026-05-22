@@ -13,9 +13,31 @@ import {
   RotateCcw,
   Store,
   Info,
-  PoundSterling,
   Percent,
 } from 'lucide-react'
+
+// ── Inline ₹ glyph, sized to match the 16px lucide icons in the info bar ────
+function RupeeIcon({ size = 16, strokeWidth = 2 }: { size?: number; strokeWidth?: number }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M6 3h12" />
+      <path d="M6 8h12" />
+      <path d="M6 13l8.5 8" />
+      <path d="M6 13h3a4.5 4.5 0 0 0 0-9" />
+    </svg>
+  )
+}
 import { toast } from 'sonner'
 import { useGetCategoriesQuery } from '@/services/categoriesApi'
 import { useGetBasketQuery } from '@/services/basketApi'
@@ -226,7 +248,7 @@ function SearchBar() {
         </span>
         <input
           ref={inputRef}
-          type="search"
+          type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search products or brands"
@@ -469,7 +491,7 @@ type PromoItem = { icon: React.ReactNode; label: string; href: string }
 function PromoStrip() {
   const items: PromoItem[] = [
     {
-      icon: <PoundSterling size={16} strokeWidth={2} />,
+      icon: <RupeeIcon size={16} strokeWidth={2} />,
       label: 'Argos Pay Credit Available',
       href: '/help/argos-pay',
     },
@@ -485,19 +507,21 @@ function PromoStrip() {
     },
   ]
   return (
-    <div className="hidden md:block border-t border-argos-gray-200 bg-white">
-      <ul className="flex items-stretch justify-center text-sm text-argos-charcoal w-full px-4 lg:px-6">
-        {items.map((item, i) => (
-          <li
-            key={item.href}
-            className={cn(
-              'flex-1 flex items-center justify-center',
-              i > 0 && 'border-l border-argos-gray-200',
-            )}
-          >
+    <div className="hidden md:block border-argos-gray-200 bg-white">
+      <ul
+        className="argos-propbar text-argos-charcoal px-4 lg:px-6"
+        style={{
+          fontFamily: 'Barlow, "Helvetica Neue", Helvetica, Arial, sans-serif',
+          fontSize: '16px',
+          lineHeight: '24px',
+        }}
+      >
+        {items.map((item) => (
+          <li key={item.href}>
             <Link
               to={item.href}
-              className="flex items-center gap-2.5 h-11 px-4 text-argos-charcoal hover:text-argos-blue hover:underline focus-ring rounded-sm transition-colors"
+              className="flex items-center gap-2.5 px-4 text-argos-charcoal hover:text-argos-blue hover:underline focus-ring rounded-sm transition-colors"
+              style={{ fontSize: '16px', lineHeight: '24px' }}
             >
               <span
                 aria-hidden="true"
@@ -522,11 +546,12 @@ function PromoStrip() {
 // Spacing between items comes from the parent flex `gap`.
 // The chevron mirrors ._6AYyb: inline-block, margin-left 6px, rotates on open.
 function NavTabs({ onShopClick, isMenuOpen }: { onShopClick: () => void; isMenuOpen: boolean }) {
+  // Mirrors Argos ._1yCAJ link: flex, 16px/400, color #333, margin 0 15px, height fills nav
   const item =
-    'flex items-center text-[16px] font-normal leading-[19.2px] text-[#333333] m-0 p-0 border-0 bg-transparent transition-none cursor-pointer'
+    'flex items-center text-[16px] font-normal leading-[19.2px] text-[#333333] mx-[35px] border-0 bg-transparent cursor-pointer'
   return (
     <nav
-      className="hidden md:flex items-center gap-[30px] shrink-0"
+      className="hidden md:flex items-center shrink-0"
       aria-label="Main navigation"
       style={{ fontFamily: 'Barlow, "Helvetica Neue", Helvetica, Arial, sans-serif' }}
     >
@@ -540,18 +565,21 @@ function NavTabs({ onShopClick, isMenuOpen }: { onShopClick: () => void; isMenuO
         <ChevronDown
           size={16}
           className={cn(
-            'inline-block ml-[6px] transition-transform duration-150 ease-in',
+            'inline-block ml-[4px] transition-transform duration-150 ease-in',
             isMenuOpen && 'rotate-180',
           )}
           aria-hidden="true"
         />
       </button>
+      {/* Trending — Argos shows this as a dropdown-style link with chevron */}
       <Link to="/browse/trending" className={item}>
         Trending
-        <ChevronDown size={16} className="inline-block ml-[6px]" aria-hidden="true" />
       </Link>
-      {/* Seasonal promo slot (Argos changes this every few weeks) */}
-      <Link to="/browse/offers" className={cn(item, 'max-w-[110px] text-left whitespace-normal')}>
+      {/* Seasonal promo slot */}
+      <Link
+        to="/promotions/summer-of-football"
+        className={cn(item, 'max-w-[110px] text-left whitespace-normal')}
+      >
         <span className="block">
           Summer of
           <br />
@@ -623,7 +651,7 @@ export function Header() {
           ._3-aaF: border-bottom:1px solid #ccc; width:100%
           ._1ni9g: max-width 1920px; centered; responsive padding 10/15/16;
                    height 93px at ≥1324px. */}
-        <div className="">
+        <div className="border-b border-[#cccccc]">
           <div className="flex flex-row flex-wrap items-center w-full max-w-[1920px] mx-auto min-w-[320px] p-[10px] md:p-[15px] xl:p-4 xl:h-[93px]">
             {/* Hamburger — mobile only */}
             <button
@@ -644,7 +672,7 @@ export function Header() {
 
             {/* Ask Trevor + Account + Wishlist + Trolley */}
             <div className="flex items-center order-2 lg:order-3 shrink-0">
-              <AskTrevorButton />
+            <AskTrevorButton />
               <AccountButton />
               <WishlistButton />
               <TrolleyButton />
@@ -655,7 +683,6 @@ export function Header() {
         {/* ── Promo strip ───────────────────────────────────────────────── */}
         <PromoStrip />
       </header>
-  <div className="border-b border-[#cccccc] w-full" ></div>
       {/* MegaMenu — positioned dynamically below real header */}
       {isMegaMenuOpen && (
         <MegaMenu categories={categories} onClose={closeMegaMenu} topOffset={headerHeight} />

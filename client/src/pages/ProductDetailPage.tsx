@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed'
 import { useGetProductBySlugQuery } from '@/services/productsApi'
 import {
   ChevronRight,
-  Truck,
   Store,
   RotateCcw,
   ShieldCheck,
@@ -37,6 +37,12 @@ export default function ProductDetailPage() {
   const { data: wishlistItems = [] } = useGetWishlistQuery()
   const [addWishlist] = useAddWishlistItemMutation()
   const [removeWishlist] = useRemoveWishlistItemMutation()
+  const { addSlug } = useRecentlyViewed()
+
+  // Record this product as recently viewed as soon as it loads.
+  useEffect(() => {
+    if (product?.slug) addSlug(product.slug)
+  }, [product?.slug]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
     return (
@@ -78,18 +84,18 @@ export default function ProductDetailPage() {
     <div className="bg-argos-gray-bg pb-10">
       <div className="page-container py-4">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-1 text-xs text-argos-gray mb-5">
+        <nav className="flex items-center gap-1 text-sm text-argos-gray mb-5">
           <Link to="/" className="hover:text-argos-blue hover:underline">
             Home
           </Link>
-          <ChevronRight size={12} />
+          <ChevronRight size={14} />
           <Link
             to={`/browse/${product.categorySlug}`}
             className="hover:text-argos-blue hover:underline capitalize"
           >
             {product.categoryName}
           </Link>
-          <ChevronRight size={12} />
+          <ChevronRight size={14} />
           <span className="text-argos-dark line-clamp-1">{product.name}</span>
         </nav>
 
@@ -262,27 +268,6 @@ export default function ProductDetailPage() {
                   <Store size={16} />
                   Reserve &amp; collect
                 </button>
-              )}
-
-              {product.deliveryOptions.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-argos-border">
-                  {product.deliveryOptions.map((opt) => (
-                    <div key={opt.type} className="flex items-start gap-2 mb-2">
-                      <Truck size={14} className="text-argos-green mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-bold text-argos-dark">
-                          {opt.price === 0 ? 'Free' : formatPriceFromPounds(opt.price / 100)} —{' '}
-                          {opt.label}
-                        </p>
-                        {opt.availableFrom && (
-                          <p className="text-xs text-argos-gray">
-                            Available from {opt.availableFrom}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
               )}
 
               <div className="mt-4 pt-4 border-t border-argos-border flex flex-col gap-2">

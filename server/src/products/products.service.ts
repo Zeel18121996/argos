@@ -27,6 +27,7 @@ export interface ProductListItem {
   isNew: boolean
   isOnOffer: boolean
   isClearance: boolean
+  isBigDeal: boolean
   isActive: boolean
   categoryId: string
   categorySlug: string
@@ -76,6 +77,7 @@ function toListItem(product: ProductModel): ProductListItem {
     isNew: product.isNew,
     isOnOffer: product.isOnOffer,
     isClearance: product.isClearance,
+    isBigDeal: product.isBigDeal,
     isActive: product.isActive,
     categoryId: product.categoryId,
     categorySlug: category?.slug ?? '',
@@ -259,6 +261,7 @@ export class ProductsService {
     if (dto.isOnOffer !== undefined) product.isOnOffer = dto.isOnOffer
     if (dto.isNew !== undefined) product.isNew = dto.isNew
     if (dto.isClearance !== undefined) product.isClearance = dto.isClearance
+    if (dto.isBigDeal !== undefined) product.isBigDeal = dto.isBigDeal
     if (dto.reserveAvailable !== undefined) product.reserveAvailable = dto.reserveAvailable
 
     await product.save()
@@ -304,6 +307,7 @@ export class ProductsService {
     if (query.isNew) where.isNew = true
     if (query.isFeatured) where.isFeatured = true
     if (query.isClearance) where.isClearance = true
+    if (query.isBigDeal) where.isBigDeal = true
     if (query.q) {
       where[Op.or] = [
         { name: { [Op.iLike]: `%${query.q}%` } },

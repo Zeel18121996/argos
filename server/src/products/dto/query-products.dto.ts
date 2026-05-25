@@ -119,6 +119,11 @@ export class QueryProductsDto {
   isClearance?: boolean
 
   @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === 'true' || value === true)
+  isBigDeal?: boolean
+
+  @IsOptional()
   @IsString()
   @MaxLength(300)
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))

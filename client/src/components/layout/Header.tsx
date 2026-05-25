@@ -491,19 +491,19 @@ type PromoItem = { icon: React.ReactNode; label: string; href: string }
 function PromoStrip() {
   const items: PromoItem[] = [
     {
-      icon: <RupeeIcon size={16} strokeWidth={2} />,
-      label: 'Argos Pay Credit Available',
-      href: '/help/argos-pay',
-    },
-    {
-      icon: <Percent size={16} strokeWidth={2} />,
-      label: 'Shop our latest offers',
-      href: '/browse/offers',
+      icon: <Truck size={16} strokeWidth={2} />,
+      label: 'Small Item Delivery ₹3.95, free over ₹100',
+      href: '/help/delivery',
     },
     {
       icon: <Truck size={16} strokeWidth={2} />,
-      label: 'A year of fast delivery with Argos Plus',
-      href: '/help/argos-plus',
+      label: 'Large Item Delivery ₹9.95',
+      href: '/help/delivery',
+    },
+    {
+      icon: <Percent size={16} strokeWidth={2} />,
+      label: 'The BIG RED event',
+      href: '/events/big-red-event',
     },
   ]
   return (
@@ -574,17 +574,11 @@ function NavTabs({ onShopClick, isMenuOpen }: { onShopClick: () => void; isMenuO
       {/* Trending — Argos shows this as a dropdown-style link with chevron */}
       <Link to="/browse/trending" className={item}>
         Trending
+        <ChevronDown size={16} className="inline-block ml-[4px]" aria-hidden="true" />
       </Link>
-      {/* Seasonal promo slot */}
-      <Link
-        to="/promotions/summer-of-football"
-        className={cn(item, 'max-w-[110px] text-left whitespace-normal')}
-      >
-        <span className="block">
-          Summer of
-          <br />
-          football
-        </span>
+      {/* Seasonal promo — currently Big Red event (matches argos.co.uk) */}
+      <Link to="/events/big-red-event" className={item}>
+        Big Red event
       </Link>
     </nav>
   )
@@ -672,7 +666,7 @@ export function Header() {
 
             {/* Ask Trevor + Account + Wishlist + Trolley */}
             <div className="flex items-center order-2 lg:order-3 shrink-0">
-            <AskTrevorButton />
+              <AskTrevorButton />
               <AccountButton />
               <WishlistButton />
               <TrolleyButton />

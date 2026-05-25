@@ -59,6 +59,15 @@ export const productsApi = baseApi.injectEndpoints({
       providesTags: [{ type: 'Product', id: 'SALE' }],
     }),
 
+    getBigDealProducts: builder.query<Product[], { limit?: number } | void>({
+      query: (arg) => ({
+        url: '/products',
+        params: { isBigDeal: true, limit: arg?.limit ?? 24 },
+      }),
+      transformResponse: (response: ProductListResponse) => response.items,
+      providesTags: [{ type: 'Product', id: 'BIG_DEAL' }],
+    }),
+
     /** Fetch a set of products by slug — used for "Pick up where you left off". */
     getProductsBySlugs: builder.query<Product[], string[]>({
       query: (slugs) => ({
@@ -80,5 +89,6 @@ export const {
   useGetFeaturedProductsQuery,
   useGetNewProductsQuery,
   useGetSaleProductsQuery,
+  useGetBigDealProductsQuery,
   useGetProductsBySlugsQuery,
 } = productsApi

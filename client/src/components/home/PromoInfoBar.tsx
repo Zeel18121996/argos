@@ -1,6 +1,7 @@
-import { Tag, Truck, CreditCard } from 'lucide-react'
+import { Tag, Truck, CreditCard, Sparkles } from 'lucide-react'
 
 const PROMOS = [
+  { icon: Sparkles, text: 'Big Red Event – massive savings across the store, ends Sunday' },
   { icon: CreditCard, text: 'Argos Pay – 0% interest available on 100s of products' },
   { icon: Tag, text: 'Shop our latest offers – save up to 50%' },
   { icon: Truck, text: 'Argos Plus – unlimited delivery for a whole year from ₹999' },
@@ -21,7 +22,7 @@ export function PromoInfoBar() {
             <div
               key={i}
               className="flex items-center justify-center gap-2 px-8 h-full"
-              style={{ width: `${100 / 9}%` }}
+              style={{ width: `${100 / (PROMOS.length * 3)}%` }}
             >
               <Icon size={16} className="text-argos-green flex-shrink-0" />
               <span className="text-[16px] leading-[24px] font-normal text-argos-dark whitespace-nowrap">

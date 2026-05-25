@@ -120,6 +120,11 @@ export class ProductModel extends BaseModel {
 
   @Default(false)
   @AllowNull(false)
+  @Column({ field: 'is_big_deal', type: DataType.BOOLEAN })
+  declare isBigDeal: boolean
+
+  @Default(false)
+  @AllowNull(false)
   @Column({ field: 'reserve_available', type: DataType.BOOLEAN })
   declare reserveAvailable: boolean
 

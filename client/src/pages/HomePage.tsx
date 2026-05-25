@@ -8,6 +8,8 @@ import 'swiper/css/navigation'
 import {
   ChevronLeft,
   ChevronRight,
+  Pause,
+  Play,
   Tv,
   Sofa,
   Trees,
@@ -40,54 +42,43 @@ type HeroSlide = {
   accent: string
   image?: string
   products?: { image: string; name: string; pricePerMonth: string }[]
+  ctaButtons?: { label: string; href: string }[]
 }
 
 const HERO_SLIDES: HeroSlide[] = [
   {
-    id: 1,
-    variant: 'argos-pay',
-    title: '0% Interest.^ Pay over 24 months on 100s of products.',
-    subtitle: 'Across top brands, home essentials and everyday must-haves.',
-    cta: 'Argos Pay',
-    ctaLink: '/help/argos-pay',
+    id: 0,
+    variant: 'image',
+    // Real Argos Big Red Event hero — scraped from argos.co.uk 2026-05-25
+    image: 'https://media.4rgos.it/i/Argos/1226-M001.5-hero-big-red-p1-desktab-v4_1',
+    title: 'Big Red Event — up to 50% off',
+    subtitle: 'Massive savings across the store. Ends Sunday 31 May.',
+    cta: 'Shop the event',
+    ctaLink: '/events/big-red-event',
     accent: '#D42114',
-    products: [
-      {
-        image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400&q=80',
-        name: 'Sony BRAVIA 7 Smart 4K HDR QLED Freeview TV',
-        pricePerMonth: 'From ₹7,499 pm*',
-      },
-      {
-        image: 'https://images.unsplash.com/photo-1610889556528-9a770e32642f?w=400&q=80',
-        name: 'Sage The Barista Express Espresso Coffee Machine',
-        pricePerMonth: 'From ₹2,099 pm*',
-      },
-      {
-        image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80',
-        name: 'Habitat Julien Velvet 2 Seater Sofa',
-        pricePerMonth: 'From ₹2,499 pm*',
-      },
+    ctaButtons: [
+      { label: 'Save 10% with RED10', href: '/events/big-red-event' },
+      { label: 'Save 20% with RED20', href: '/events/big-red-event' },
+      { label: 'Save 30% with RED30', href: '/events/big-red-event' },
+      { label: 'Save 50% with RED50', href: '/events/big-red-event' },
     ],
   },
   {
-    id: 2,
+    id: 1,
     variant: 'image',
-    image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=1400&q=80',
-    title: 'Up to 50% off Technology',
-    subtitle: 'Laptops, TVs, gaming and more',
-    cta: 'Shop now',
-    ctaLink: '/browse/technology',
-    accent: '#028940',
-  },
-  {
-    id: 3,
-    variant: 'image',
-    image: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1400&q=80',
+    // Real Argos second hero — scraped from argos.co.uk 2026-05-25
+    image: 'https://media.4rgos.it/i/Argos/1226-M001.5-hero-8981671-desktab',
     title: 'Summer Garden Sale',
-    subtitle: 'Save 20% on selected garden & outdoor',
+    subtitle: 'Save up to 30% on selected garden & outdoor lines',
     cta: 'Shop garden',
     ctaLink: '/browse/home-and-garden',
-    accent: '#044C99',
+    accent: '#028940',
+    ctaButtons: [
+      { label: 'Save on garden furniture', href: '/browse/home-and-garden' },
+      { label: 'Save on BBQs', href: '/browse/home-and-garden' },
+      { label: 'Save on outdoor decorations', href: '/browse/home-and-garden' },
+      { label: 'Shop all', href: '/browse/home-and-garden' },
+    ],
   },
 ]
 
@@ -103,13 +94,24 @@ type PinnedTile = {
 
 const PINNED_TILES: PinnedTile[] = [
   {
-    id: 'argos-pay',
-    label: '0% interest available^',
+    id: 'big-red-event',
+    label: 'The Big Red Event',
     bg: '#D42114',
     fg: '#FFFFFF',
-    href: '/help/argos-pay',
-    badge: 'Argos\nPay',
-    image: 'https://media.4rgos.it/i/Argos/0925-m052-visualnav-argos-pay',
+    href: '/events/big-red-event',
+    badge: 'The Big Red\nEvent',
+    // Live Argos visual nav tile — scraped 2026-05-25
+    image: 'https://media.4rgos.it/i/Argos/M052-visualnav-the-bigred-event-homepage',
+  },
+  {
+    id: 'keeping-cool',
+    label: 'Keeping cool',
+    bg: '#044C99',
+    fg: '#FFFFFF',
+    href: '/browse/home-and-garden',
+    badge: 'Keeping\ncool',
+    // Live Argos visual nav tile — scraped 2026-05-25
+    image: 'https://media.4rgos.it/i/Argos/1226-m052-visualnav-keeping-cool',
   },
   {
     id: 'top-100',
@@ -192,9 +194,7 @@ function buildSrcSet(url: string | undefined): string | undefined {
   // Replace any existing &w=NNN with the target widths.
   const base = url.replace(/&w=\d+/g, '')
   const join = base.includes('?') ? '&' : '?'
-  return [600, 1000, 1400, 1800]
-    .map((w) => `${base}${join}w=${w} ${w}w`)
-    .join(', ')
+  return [600, 1000, 1400, 1800].map((w) => `${base}${join}w=${w} ${w}w`).join(', ')
 }
 
 // ── Reduced-motion preference hook ─────────────────────────────────────────
@@ -288,7 +288,20 @@ export default function HomePage() {
     .filter(Boolean) as typeof recentProducts
   const heroSwiperRef = useRef<SwiperClass | null>(null)
   const [heroActiveIndex, setHeroActiveIndex] = useState(0)
+  const [isPlaying, setIsPlaying] = useState(true)
   const reduceMotion = usePrefersReducedMotion()
+
+  const toggleAutoplay = () => {
+    const swiper = heroSwiperRef.current
+    if (!swiper) return
+    if (isPlaying) {
+      swiper.autoplay.stop()
+      setIsPlaying(false)
+    } else {
+      swiper.autoplay.start()
+      setIsPlaying(true)
+    }
+  }
 
   const catScrollRef = useRef<HTMLDivElement>(null)
   const [showCatPrev, setShowCatPrev] = useState(false)
@@ -329,7 +342,11 @@ export default function HomePage() {
               </button>
             )}
 
-            <div ref={catScrollRef} onScroll={updateCatArrows} className="category-carousel-container">
+            <div
+              ref={catScrollRef}
+              onScroll={updateCatArrows}
+              className="category-carousel-container"
+            >
               <ol className="category-carousel-list">
                 {[...PINNED_TILES, JUST_FOR_YOU_TILE].map((tile) => (
                   <li key={tile.id} className="category-carousel-item">
@@ -378,7 +395,12 @@ export default function HomePage() {
                             />
                           ) : (
                             <div className="category-img category-img--icon">
-                              <Icon size={44} strokeWidth={1.5} className="text-argos-charcoal" aria-hidden="true" />
+                              <Icon
+                                size={44}
+                                strokeWidth={1.5}
+                                className="text-argos-charcoal"
+                                aria-hidden="true"
+                              />
                             </div>
                           )}
                           <p className="category-label">{cat.name}</p>
@@ -413,7 +435,11 @@ export default function HomePage() {
         <div className="overflow-hidden rounded-2xl">
           <Swiper
             modules={[Autoplay]}
-            autoplay={reduceMotion ? false : { delay: 6000, disableOnInteraction: false, pauseOnMouseEnter: true }}
+            autoplay={
+              reduceMotion
+                ? false
+                : { delay: 6000, disableOnInteraction: false, pauseOnMouseEnter: true }
+            }
             loop
             onSwiper={(s) => {
               heroSwiperRef.current = s
@@ -438,39 +464,19 @@ export default function HomePage() {
                   {slide.variant === 'argos-pay' ? (
                     <ArgosPayHeroSlide slide={slide} />
                   ) : (
-                    <div className="relative aspect-[16/7] min-h-[280px] sm:aspect-[16/6] lg:aspect-[16/5] overflow-hidden bg-argos-gray-bg">
+                    <div className="relative aspect-[4/3] sm:aspect-[10/3] overflow-hidden bg-argos-gray-bg">
                       <img
                         src={slide.image}
                         srcSet={buildSrcSet(slide.image)}
-                        sizes="(min-width: 1024px) 1400px, 100vw"
+                        sizes="(min-width: 640px) 1440px, 100vw"
                         alt={slide.title}
-                        className="w-full h-full object-cover"
+                        className="absolute inset-0 w-full h-full object-cover object-center"
                         // First slide is the LCP — prioritise it and load eagerly.
                         loading={index === 0 ? 'eager' : 'lazy'}
                         decoding="async"
                         // @ts-expect-error — fetchpriority is valid HTML but missing from React types <19.2
                         fetchpriority={index === 0 ? 'high' : 'auto'}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="page-container">
-                          <div className="max-w-md">
-                            <h2 className="text-2xl md:text-[42px] font-bold text-white mb-2 leading-tight tracking-tight">
-                              {slide.title}
-                            </h2>
-                            <p className="text-white/90 text-sm md:text-base mb-5 font-normal">
-                              {slide.subtitle}
-                            </p>
-                            <Link
-                              to={slide.ctaLink}
-                              className="inline-block text-white font-bold text-sm px-6 py-3 rounded-sm hover:brightness-110 transition-all"
-                              style={{ backgroundColor: slide.accent }}
-                            >
-                              {slide.cta}
-                            </Link>
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   )}
                 </div>
@@ -479,9 +485,30 @@ export default function HomePage() {
           </Swiper>
         </div>
 
+        {/* ── Slide-specific CTA button row — sits directly below the image */}
+        {(() => {
+          const slide = HERO_SLIDES[heroActiveIndex]
+          const btns = slide?.ctaButtons
+          if (!btns?.length) return null
+          return (
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+              {btns.map((btn) => (
+                <Link
+                  key={btn.label}
+                  to={btn.href}
+                  className="flex items-center justify-center py-4 px-3 rounded-lg text-white text-[15px] font-bold text-center transition-colors hover:brightness-110"
+                  style={{ backgroundColor: slide.accent }}
+                >
+                  {btn.label}
+                </Link>
+              ))}
+            </div>
+          )
+        })()}
+
         {/* Pagination — proper tablist semantics so a screen reader knows
             which slide is active without relying on visual styling. */}
-        <div className="flex items-center justify-center gap-3 py-2.5 bg-white">
+        <div className="relative flex items-center justify-center gap-3 py-2.5 bg-white">
           <button
             onClick={() => heroSwiperRef.current?.slidePrev()}
             className="w-8 h-8 rounded-full bg-white border border-argos-gray-200 flex items-center justify-center hover:bg-argos-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-argos-blue transition-colors shrink-0"
@@ -523,10 +550,31 @@ export default function HomePage() {
           >
             <ChevronRight size={14} className="text-argos-charcoal" aria-hidden="true" />
           </button>
+
+          {/* Pause / Play — right-aligned like live Argos */}
+          {!reduceMotion && (
+            <button
+              type="button"
+              onClick={toggleAutoplay}
+              aria-label={isPlaying ? 'Pause slideshow' : 'Play slideshow'}
+              className="absolute right-0 flex items-center gap-1.5 text-[14px] font-bold text-argos-blue hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-argos-blue"
+            >
+              {isPlaying ? (
+                <>
+                  <Pause size={14} aria-hidden="true" /> Pause
+                </>
+              ) : (
+                <>
+                  <Play size={14} aria-hidden="true" /> Play
+                </>
+              )}
+            </button>
+          )}
         </div>
+        {/* end pagination row */}
       </section>
 
-      {/* ── Pick up where you left off ───────────────────────────────── */}
+      {/* ── Pick up where you left off ────────────────────────────────── */}
       {(recentLoading || sortedRecentProducts.length > 0) && (
         <div className="bg-white border-t border-argos-border">
           <div className="page-container py-8">

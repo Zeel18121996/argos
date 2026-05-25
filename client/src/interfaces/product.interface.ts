@@ -17,6 +17,7 @@ export interface Product {
   isNew: boolean
   isOnOffer: boolean
   isClearance: boolean
+  isBigDeal: boolean
   isFeatured: boolean
   description: string | null
   features: string[]
@@ -83,6 +84,7 @@ export interface ProductListParams {
   isNew?: boolean
   isFeatured?: boolean
   isClearance?: boolean
+  isBigDeal?: boolean
   /** Fetch a specific set of products by slug (used for recently viewed). */
   slugs?: string
 }

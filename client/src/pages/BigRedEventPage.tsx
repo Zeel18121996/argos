@@ -1,7 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Check } from 'lucide-react'
 import { useGetBigDealProductsQuery } from '@/services/productsApi'
 import ProductCard from '@/components/Common/ProductCard/ProductCard'
+import type { Product } from '@/interfaces/product.interface'
+import { cn } from '@/utils/cn'
 
 // ── Exact Argos CDN image URLs taken from argos.co.uk/events/big-event ──────────────
 const CDN = 'https://media.4rgos.it/i/Argos'
@@ -86,6 +89,24 @@ const SERVICE_CARDS = [
     href: '/help/delivery-and-collection',
   },
 ]
+
+// ── Promo codes ─────────────────────────────────────────────────────────────────
+
+/** RED10/20/30/50 — clicking filters the product grid by minimum discount %. */
+const PROMO_CODES = [
+  { code: 'RED10', percent: 10 },
+  { code: 'RED20', percent: 20 },
+  { code: 'RED30', percent: 30 },
+  { code: 'RED50', percent: 50 },
+] as const
+
+type PromoPercent = (typeof PROMO_CODES)[number]['percent']
+
+/** Discount % from compareAtPrice → price (rounded). Zero if no sale. */
+function discountPercent(product: Product): number {
+  if (!product.compareAtPrice || product.compareAtPrice <= product.price) return 0
+  return Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
+}
 
 // ── Page sections ───────────────────────────────────────────────────────────────
 
@@ -187,6 +208,59 @@ function CategoryDealBanners() {
   )
 }
 
+/** Red promo-code buttons — clicking filters the product grid by min discount %. */
+function CodeStrip({
+  selected,
+  onSelect,
+}: {
+  selected: PromoPercent | null
+  onSelect: (percent: PromoPercent | null) => void
+}) {
+  return (
+    <section aria-label="Shop deals by promo code" className="bg-white">
+      <div className="page-container py-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {PROMO_CODES.map((c) => {
+            const active = selected === c.percent
+            return (
+              <button
+                key={c.code}
+                type="button"
+                aria-pressed={active}
+                data-testid={`code-filter-${c.code}`}
+                onClick={() => onSelect(active ? null : c.percent)}
+                className={cn(
+                  'bg-argos-red text-white font-bold rounded-sm py-4 px-3 text-sm md:text-base text-center',
+                  'hover:bg-argos-red-dark transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-argos-yellow focus-visible:ring-offset-2',
+                  active && 'ring-4 ring-argos-yellow ring-offset-2 ring-offset-white',
+                )}
+              >
+                {active && (
+                  <Check size={16} className="inline-block mr-1.5 -mt-0.5" aria-hidden="true" />
+                )}
+                Save {c.percent}% with {c.code}
+              </button>
+            )
+          })}
+        </div>
+        {selected !== null && (
+          <div className="text-center mt-3">
+            <button
+              type="button"
+              data-testid="code-filter-clear"
+              onClick={() => onSelect(null)}
+              className="text-sm text-argos-blue font-bold hover:underline"
+            >
+              Clear filter — show all Big Red Event deals
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
 /** 4 service / trust cards (square, 4 columns) */
 function ServiceCards() {
   return (
@@ -219,6 +293,7 @@ function ServiceCards() {
 // ── Main page ───────────────────────────────────────────────────────────────
 export default function BigRedEventPage() {
   const { data: products = [], isLoading } = useGetBigDealProductsQuery({ limit: 24 })
+  const [minDiscount, setMinDiscount] = useState<PromoPercent | null>(null)
 
   useEffect(() => {
     const prev = document.title
@@ -227,6 +302,11 @@ export default function BigRedEventPage() {
       document.title = prev
     }
   }, [])
+
+  const filteredProducts = useMemo(() => {
+    if (minDiscount === null) return products
+    return products.filter((p) => discountPercent(p) >= minDiscount)
+  }, [products, minDiscount])
 
   return (
     <div className="bg-white">
@@ -239,13 +319,17 @@ export default function BigRedEventPage() {
       {/* 3. Argos Pay full-width banner */}
       <ArgosPayBanner />
 
-      {/* 4. Category deal banners (4 col) */}
+      {/* 4. RED10/20/30/50 promo-code filter strip */}
+      <CodeStrip selected={minDiscount} onSelect={setMinDiscount} />
+
+      {/* 5. Category deal banners (4 col) */}
       <CategoryDealBanners />
 
-      {/* 5. Big Deal product grid */}
+      {/* 6. Big Deal product grid (filtered by selected code) */}
       <section
         id="big-red-event-products"
         aria-labelledby="bre-products-heading"
+        aria-live="polite"
         className="page-container py-8"
       >
         <div className="flex items-end justify-between mb-6">
@@ -253,7 +337,12 @@ export default function BigRedEventPage() {
             id="bre-products-heading"
             className="text-2xl md:text-[28px] font-bold text-argos-dark leading-tight"
           >
-            Big Red Event deals
+            {minDiscount === null ? 'Big Red Event deals' : `Save ${minDiscount}% or more`}
+            {!isLoading && (
+              <span className="ml-2 text-sm font-normal text-argos-gray">
+                ({filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'})
+              </span>
+            )}
           </h2>
           <Link
             to="/browse?onOffer=true"
@@ -279,23 +368,39 @@ export default function BigRedEventPage() {
               </div>
             ))}
           </div>
-        ) : products.length === 0 ? (
+        ) : filteredProducts.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-lg font-bold text-argos-dark">Event products coming soon</p>
-            <p className="text-sm text-argos-gray mt-2">
-              Check back shortly — our buyers are finalising this week’s line-up.
+            <p className="text-lg font-bold text-argos-dark">
+              {minDiscount === null
+                ? 'Event products coming soon'
+                : `No deals at ${minDiscount}% or more right now`}
             </p>
+            <p className="text-sm text-argos-gray mt-2">
+              {minDiscount === null
+                ? 'Check back shortly — our buyers are finalising this week’s line-up.'
+                : 'Try a lower percentage, or clear the filter to see all deals.'}
+            </p>
+            {minDiscount !== null && (
+              <button
+                type="button"
+                onClick={() => setMinDiscount(null)}
+                data-testid="empty-state-clear"
+                className="mt-4 text-sm font-bold text-argos-blue hover:underline"
+              >
+                Clear filter
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
       </section>
 
-      {/* 6. Service / trust cards */}
+      {/* 7. Service / trust cards */}
       <ServiceCards />
     </div>
   )

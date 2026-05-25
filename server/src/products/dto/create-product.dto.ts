@@ -87,5 +87,9 @@ export class CreateProductDto {
 
   @IsOptional()
   @IsBoolean()
+  isBigDeal?: boolean = false
+
+  @IsOptional()
+  @IsBoolean()
   reserveAvailable?: boolean = false
 }

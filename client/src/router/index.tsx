@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth'
 
 // Lazy-load all pages
 const HomePage = lazy(() => import('@/pages/HomePage'))
+const BigRedEventPage = lazy(() => import('@/pages/BigRedEventPage'))
 const BrowsePage = lazy(() => import('@/pages/BrowsePage'))
 const SearchPage = lazy(() => import('@/pages/SearchPage'))
 const ProductDetailPage = lazy(() => import('@/pages/ProductDetailPage'))
@@ -184,6 +185,7 @@ const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      { path: 'events/big-red-event', element: wrap(BigRedEventPage) },
       {
         path: 'promotions/summer-of-football',
         element: (

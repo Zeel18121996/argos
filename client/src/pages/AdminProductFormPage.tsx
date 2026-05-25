@@ -29,6 +29,7 @@ const DEFAULTS = {
   isOnOffer: false,
   isNew: false,
   isClearance: false,
+  isBigDeal: false,
   reserveAvailable: false,
 }
 
@@ -92,6 +93,7 @@ export default function AdminProductFormPage() {
         isOnOffer: existing.isOnOffer ?? false,
         isNew: existing.isNew ?? false,
         isClearance: existing.isClearance ?? false,
+        isBigDeal: existing.isBigDeal ?? false,
         reserveAvailable: existing.reserveAvailable ?? false,
       })
     }
@@ -509,6 +511,7 @@ export default function AdminProductFormPage() {
                 { key: 'isOnOffer', label: 'On offer' },
                 { key: 'isNew', label: 'New' },
                 { key: 'isClearance', label: 'Clearance' },
+                { key: 'isBigDeal', label: 'Big Red Event' },
                 { key: 'reserveAvailable', label: 'Reserve available' },
               ] as const
             ).map(({ key, label }) => (

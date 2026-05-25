@@ -93,5 +93,9 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsBoolean()
+  isBigDeal?: boolean
+
+  @IsOptional()
+  @IsBoolean()
   reserveAvailable?: boolean
 }

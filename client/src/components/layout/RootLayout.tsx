@@ -3,6 +3,7 @@ import { Toaster } from 'sonner'
 import { Header } from './Header'
 import { Footer } from './Footer'
 import { BasketDrawer } from './BasketDrawer'
+import TrevorDrawer from '@/components/trevor/TrevorDrawer'
 import { useAppSelector, useAppDispatch } from '@/app/store'
 import { setBasketDrawerOpen } from '@/features/ui/uiSlice'
 
@@ -28,6 +29,8 @@ export function RootLayout() {
       <Footer />
       <Toaster position="top-right" richColors closeButton duration={3000} />
       <BasketDrawer isOpen={isOpen} onClose={() => dispatch(setBasketDrawerOpen(false))} />
+      {/* Ask Trevor — mounted inside the Router so its <Link>s work. */}
+      <TrevorDrawer />
     </div>
   )
 }

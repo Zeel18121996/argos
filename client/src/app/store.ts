@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { baseApi } from './baseApi'
 import authReducer from '@/features/auth/authSlice'
 import uiReducer from '@/features/ui/uiSlice'
+import trevorReducer from '@/features/trevor/trevorSlice'
 import cartReducer from '@/store/slices/cartSlice'
 import wishlistReducer from '@/store/slices/wishlistSlice'
 
@@ -11,6 +12,7 @@ export const store = configureStore({
     [baseApi.reducerPath]: baseApi.reducer,
     auth: authReducer,
     ui: uiReducer,
+    trevor: trevorReducer,
     cart: cartReducer,
     wishlist: wishlistReducer,
   },

@@ -18,6 +18,7 @@ import { WishlistModule } from './wishlist/wishlist.module'
 import { OrdersModule } from './orders/orders.module'
 import { PaymentsModule } from './payments/payments.module'
 import { CheckoutModule } from './checkout/checkout.module'
+import { TrevorModule } from './trevor/trevor.module'
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard'
 import { RolesGuard } from './common/guards/roles.guard'
 
@@ -82,6 +83,7 @@ import { RolesGuard } from './common/guards/roles.guard'
     OrdersModule,
     PaymentsModule,
     CheckoutModule,
+    TrevorModule,
   ],
   controllers: [AppController],
   providers: [

@@ -43,6 +43,7 @@ import { useGetCategoriesQuery } from '@/services/categoriesApi'
 import { useGetBasketQuery } from '@/services/basketApi'
 import { useAppSelector, useAppDispatch } from '@/app/store'
 import { setMegaMenuOpen, setMobileNavOpen, setBasketDrawerOpen } from '@/features/ui/uiSlice'
+import { setTrevorOpen } from '@/features/trevor/trevorSlice'
 import { useScrolled } from '@/hooks/useScrolled'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/utils/cn'
@@ -76,13 +77,15 @@ function ArgosLogo() {
   )
 }
 
-// ── "Ask Trevor" green pill button — Argos's AI assistant ───────────────────
+// ── "Ask Trevor" green pill button — Argos's AI assistant ───────────────
 // Mirrors .gnQ4T: h-44 rounded-25 (full), gradient #045228 → #008542,
 // font Barlow 16/600, gap-1, padding-left 6 on lg+
 function AskTrevorButton() {
+  const dispatch = useAppDispatch()
   return (
     <button
       type="button"
+      onClick={() => dispatch(setTrevorOpen(true))}
       aria-label="Ask Trevor — Argos AI assistant"
       className="hidden lg:inline-flex items-center justify-start gap-1 h-[44px] ml-[12px] pl-[6px] pr-1 rounded-full text-white shrink-0 transition-shadow focus-ring"
       style={{
@@ -517,7 +520,7 @@ function PromoStrip() {
         }}
       >
         {items.map((item) => (
-          <li key={item.href}>
+          <li key={item.label}>
             <Link
               to={item.href}
               className="flex items-center gap-2.5 px-4 text-argos-charcoal hover:text-argos-blue hover:underline focus-ring rounded-sm transition-colors"

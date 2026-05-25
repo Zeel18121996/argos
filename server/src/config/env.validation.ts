@@ -50,4 +50,10 @@ export const envValidationSchema = Joi.object({
       not: 'development',
       then: Joi.valid('false'),
     }),
+
+  // OpenAI (Ask Trevor). Optional — when missing the chatbot returns a stub
+  // reply so the rest of the app keeps booting.
+  OPENAI_API_KEY: Joi.string().optional(),
+  OPENAI_MODEL: Joi.string().default('gpt-4o-mini'),
+  OPENAI_MAX_TOKENS: Joi.number().integer().min(50).max(2000).default(500),
 })
